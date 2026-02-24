@@ -55,7 +55,7 @@ resource "azurerm_nat_gateway_public_ip_association" "nat_assoc" {
 # Azure Container Registry (ACR) – Premium tier, shared for all environments
 # CHANGE THE NAME BELOW TO SOMETHING GLOBALLY UNIQUE IF YOU GET A NAME CONFLICT
 resource "azurerm_container_registry" "acr" {
-  name                          = "felixjamacrs20260224"   # ← MUST BE UNIQUE – change this if needed
+  name                          = "jaacr20260224"   # ← MUST BE UNIQUE – change this if needed
   resource_group_name           = var.rg_name
   location                      = var.location
   sku                           = "Premium"
