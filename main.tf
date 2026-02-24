@@ -2,12 +2,9 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.61"  # Latest stable as of Feb 2026
+      version = "~> 4.61"
     }
   }
-
-  # Recommended remote backend (uncomment and configure SA first)
-  # backend "azurerm" { ... }
 }
 
 provider "azurerm" {
@@ -15,7 +12,11 @@ provider "azurerm" {
 }
 
 locals {
-  common_tags = var.common_tags
+  common_tags = {
+    project     = "ja-mma-portal"
+    cost-center = "ja-mma-portal"
+    owner       = "ja-portal-team"
+  }
 }
 
 resource "azurerm_resource_group" "shared" {
@@ -43,16 +44,15 @@ module "dev" {
   replica_max             = 3
   zone_redundancy_enabled = false
   cosmos_zone_redundant   = false
-  backup_retention_hours  = 168   # 7 days
+  backup_retention_hours  = 168
   ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "dev", "backup-enabled" = "true", "backup-policy" = "daily" })
 
   hub_vnet_id             = module.shared.hub_vnet_id
-  hub_nat_gateway_id      = module.shared.hub_nat_gateway_id   # Primary NAT
+  hub_nat_gateway_id      = module.shared.hub_nat_gateway_id
   acr_login_server        = module.shared.acr_login_server
   log_analytics_id        = module.shared.log_analytics_id
   key_vault_id            = module.shared.key_vault_id
-  front_door_id           = ""   # Not used in DEV
 
   depends_on = [module.shared]
 }
@@ -70,7 +70,7 @@ module "uat" {
   zone_redundancy_enabled = false
   cosmos_zone_redundant   = false
   backup_retention_hours  = 168
-  ingress_type            = "front_door_app_gateway"
+  ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "uat", "backup-enabled" = "true", "backup-policy" = "daily" })
 
   hub_vnet_id             = module.shared.hub_vnet_id
@@ -78,7 +78,6 @@ module "uat" {
   acr_login_server        = module.shared.acr_login_server
   log_analytics_id        = module.shared.log_analytics_id
   key_vault_id            = module.shared.key_vault_id
-  front_door_id           = module.shared.front_door_id
 
   depends_on = [module.shared]
 }
@@ -90,21 +89,20 @@ module "prod" {
   rg_name                 = "rg-ja-mma-prod"
   location                = var.location
   vnet_cidr               = "10.30.0.0/22"
-  az_count                = 2   # Two AZs as per design (expandable to 3)
+  az_count                = 2
   replica_min             = 1
   replica_max             = 20
   zone_redundancy_enabled = true
   cosmos_zone_redundant   = true
-  backup_retention_hours  = 720   # 30 days
-  ingress_type            = "front_door_app_gateway"
+  backup_retention_hours  = 720
+  ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "prod", "backup-enabled" = "true", "backup-policy" = "daily" })
 
   hub_vnet_id             = module.shared.hub_vnet_id
-  hub_nat_gateway_id      = module.shared.hub_nat_gateway_id_ha   # HA NAT
+  hub_nat_gateway_id      = module.shared.hub_nat_gateway_id_ha
   acr_login_server        = module.shared.acr_login_server
   log_analytics_id        = module.shared.log_analytics_id
   key_vault_id            = module.shared.key_vault_id
-  front_door_id           = module.shared.front_door_id
 
   depends_on = [module.shared]
 }

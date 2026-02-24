@@ -1,16 +1,19 @@
-output "acr_login_server" {
+output "shared_acr_login_server" {
   value       = module.shared.acr_login_server
   description = "ACR for pushing frontend/backend images"
 }
 
-output "log_analytics_workspace_id" {
-  value = module.shared.log_analytics_id
+output "shared_hub_vnet_id" {
+  value       = module.shared.hub_vnet_id
+  description = "Shared Hub VNet ID"
 }
 
-output "key_vault_id" {
-  value = module.shared.key_vault_id
+output "shared_log_analytics_id" {
+  value       = module.shared.log_analytics_id
+  description = "Shared Log Analytics Workspace ID"
 }
 
-output "front_door_id" {
-  value = module.shared.front_door_id
+output "shared_key_vault_id" {
+  value       = module.shared.key_vault_id
+  description = "Shared Key Vault ID"
 }

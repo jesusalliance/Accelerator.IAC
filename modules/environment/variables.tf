@@ -16,4 +16,9 @@ variable "hub_nat_gateway_id" { type = string }
 variable "acr_login_server" { type = string }
 variable "log_analytics_id" { type = string }
 variable "key_vault_id" { type = string }
-variable "front_door_id" { type = string }
+
+# Made optional - classic Front Door deprecated; will use new Front Door later
+variable "front_door_id" {
+  type    = string
+  default = ""  # Empty by default
+}

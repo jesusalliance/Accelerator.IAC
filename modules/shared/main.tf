@@ -1,4 +1,14 @@
+# =============================================
+# modules/shared/main.tf
+# Shared resources for Jesus Alliance MMA Portal
+# Centralized in rg-ja-shared (hub VNet, NAT, ACR, Log Analytics, Key Vault, Private DNS)
+# Front Door (classic) removed due to Azure deprecation (new creations blocked since Apr 2025)
+# =============================================
+
 data "azurerm_client_config" "current" {}
+
+# Resource Group is created in root main.tf (rg-ja-shared)
+# All resources below are placed in var.rg_name = "rg-ja-shared"
 
 # Hub VNet
 resource "azurerm_virtual_network" "hub" {
@@ -16,7 +26,7 @@ resource "azurerm_subnet" "nat_egress" {
   address_prefixes     = ["10.40.0.0/24"]
 }
 
-# NAT Gateways (2 created; DEV/UAT use [0], PROD uses HA)
+# NAT Gateways – 2 created (1 for DEV/UAT usage, 2 for PROD HA)
 resource "azurerm_public_ip" "nat_pip" {
   count               = 2
   name                = "pip-nat-${count.index + 1}"
@@ -42,19 +52,20 @@ resource "azurerm_nat_gateway_public_ip_association" "nat_assoc" {
   public_ip_address_id = azurerm_public_ip.nat_pip[count.index].id
 }
 
-# ACR Premium
+# Azure Container Registry (ACR) – Premium tier, shared for all environments
+# CHANGE THE NAME BELOW TO SOMETHING GLOBALLY UNIQUE IF YOU GET A NAME CONFLICT
 resource "azurerm_container_registry" "acr" {
-  name                          = "acrjasharedunique"  # MUST be globally unique - change this
+  name                          = "felixjamacrs20260224"   # ← MUST BE UNIQUE – change this if needed
   resource_group_name           = var.rg_name
   location                      = var.location
   sku                           = "Premium"
   admin_enabled                 = false
-  zone_redundancy_enabled       = true   # Recommended for shared
+  zone_redundancy_enabled       = true
   public_network_access_enabled = false
   tags                          = var.tags
 }
 
-# Log Analytics
+# Log Analytics Workspace – centralized logging/metrics
 resource "azurerm_log_analytics_workspace" "logs" {
   name                = "log-ja-shared"
   resource_group_name = var.rg_name
@@ -64,68 +75,45 @@ resource "azurerm_log_analytics_workspace" "logs" {
   tags                = var.tags
 }
 
-# Key Vault RBAC + protection
+# Azure Key Vault – shared secrets, RBAC scoped by environment
 resource "azurerm_key_vault" "kv" {
   name                        = "kv-ja-shared"
   resource_group_name         = var.rg_name
   location                    = var.location
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   sku_name                    = "standard"
-  enable_rbac_authorization   = true
+  rbac_authorization_enabled  = true
   soft_delete_retention_days  = 90
   purge_protection_enabled    = true
   tags                        = var.tags
 }
 
-# Private DNS Zones (example for Cosmos Mongo - add more as needed)
+# Private DNS Zone – example for Cosmos DB MongoDB API (add more zones later)
 resource "azurerm_private_dns_zone" "cosmos_mongo" {
   name                = "privatelink.mongo.cosmos.azure.com"
   resource_group_name = var.rg_name
   tags                = var.tags
 }
 
-# Front Door + WAF (basic; expand routing to point to envs)
-resource "azurerm_frontdoor" "frontdoor" {
-  name                                         = "fd-ja-shared"
-  resource_group_name                          = var.rg_name
-  enforce_backend_pools_certificate_name_check = false
-  tags                                         = var.tags
+# =============================================
+# Front Door – REMOVED due to Azure deprecation (new creations blocked since Apr 2025)
+# Use new Azure Front Door (Standard/Premium) instead – see below for future implementation
+# =============================================
 
-  frontend_endpoint {
-    name      = "frontend"
-    host_name = "ja-mma-portal.azurefd.net"  # Update to custom domain
-  }
-
-  backend_pool {
-    name = "default-backend"
-    backend {
-      host_header = "placeholder.azurewebsites.net"
-      address     = "placeholder.azurewebsites.net"
-      http_port   = 80
-      https_port  = 443
-    }
-  }
-
-  routing_rule {
-    name               = "default"
-    accepted_protocols = ["Https"]
-    patterns_to_match  = ["/*"]
-    frontend_endpoints = ["frontend"]
-    forwarding_configuration {
-      forwarding_protocol = "MatchRequest"
-      backend_pool_name   = "default-backend"
-    }
-  }
-}
-
-resource "azurerm_frontdoor_firewall_policy" "waf" {
-  name                = "waf-ja-shared"
+/*
+# Example placeholder for new Azure Front Door (recommended migration path)
+resource "azurerm_cdn_frontdoor_profile" "frontdoor" {
+  name                = "fd-ja-shared"
   resource_group_name = var.rg_name
-  mode                = "Prevention"
+  sku_name            = "Standard_AzureFrontDoor"
   tags                = var.tags
-
-  managed_rule {
-    type    = "DefaultRuleSet"
-    version = "2.1"  # OWASP-based DRS 2.1 (2026 standard)
-  }
 }
+
+resource "azurerm_cdn_frontdoor_endpoint" "endpoint" {
+  name                     = "endpoint-jashared"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontdoor.id
+  tags                     = var.tags
+}
+
+# ... add origin group, origins, routes, security policy/WAF when ready
+*/
