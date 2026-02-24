@@ -1,2 +1,2 @@
 # Accelerator.IAC
-Jesus Alliance Micro-Ministry-Accelerator IAC Code
+Jesus Alliance Micro-Ministry-Accelerator IAC Shared Code
