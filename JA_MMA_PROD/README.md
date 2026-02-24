@@ -1,2 +1,2 @@
-# Accelerator.IAC
-Jesus Alliance Micro-Ministry-Accelerator IAC Code
+# Accelerator.IAC.PROD
+Jesus Alliance Micro-Ministry-Accelerator IAC PROD Code
