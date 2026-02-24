@@ -1,14 +1,10 @@
 # =============================================
 # modules/shared/main.tf
 # Shared resources for Jesus Alliance MMA Portal
-# Centralized in rg-ja-shared (hub VNet, NAT, ACR, Log Analytics, Key Vault, Private DNS)
-# Front Door (classic) removed due to Azure deprecation (new creations blocked since Apr 2025)
+# Centralized in rg-ja-shared
 # =============================================
 
 data "azurerm_client_config" "current" {}
-
-# Resource Group is created in root main.tf (rg-ja-shared)
-# All resources below are placed in var.rg_name = "rg-ja-shared"
 
 # Hub VNet
 resource "azurerm_virtual_network" "hub" {
@@ -52,10 +48,9 @@ resource "azurerm_nat_gateway_public_ip_association" "nat_assoc" {
   public_ip_address_id = azurerm_public_ip.nat_pip[count.index].id
 }
 
-# Azure Container Registry (ACR) – Premium tier, shared for all environments
-# CHANGE THE NAME BELOW TO SOMETHING GLOBALLY UNIQUE IF YOU GET A NAME CONFLICT
+# ACR Premium - CHANGE THIS NAME TO SOMETHING GLOBALLY UNIQUE
 resource "azurerm_container_registry" "acr" {
-  name                          = "jaacr20260224"   # ← MUST BE UNIQUE – change this if needed
+  name                          = "felixjamacrs20260224"  # ← MUST BE UNIQUE – change if error
   resource_group_name           = var.rg_name
   location                      = var.location
   sku                           = "Premium"
@@ -65,7 +60,7 @@ resource "azurerm_container_registry" "acr" {
   tags                          = var.tags
 }
 
-# Log Analytics Workspace – centralized logging/metrics
+# Log Analytics
 resource "azurerm_log_analytics_workspace" "logs" {
   name                = "log-ja-shared"
   resource_group_name = var.rg_name
@@ -75,7 +70,7 @@ resource "azurerm_log_analytics_workspace" "logs" {
   tags                = var.tags
 }
 
-# Azure Key Vault – shared secrets, RBAC scoped by environment
+# Key Vault
 resource "azurerm_key_vault" "kv" {
   name                        = "kv-ja-shared"
   resource_group_name         = var.rg_name
@@ -88,7 +83,7 @@ resource "azurerm_key_vault" "kv" {
   tags                        = var.tags
 }
 
-# Private DNS Zone – example for Cosmos DB MongoDB API (add more zones later)
+# Private DNS Zone (example for Cosmos MongoDB)
 resource "azurerm_private_dns_zone" "cosmos_mongo" {
   name                = "privatelink.mongo.cosmos.azure.com"
   resource_group_name = var.rg_name
@@ -96,24 +91,64 @@ resource "azurerm_private_dns_zone" "cosmos_mongo" {
 }
 
 # =============================================
-# Front Door – REMOVED due to Azure deprecation (new creations blocked since Apr 2025)
-# Use new Azure Front Door (Standard/Premium) instead – see below for future implementation
+# NEW: GitHub OIDC Federation & Managed Identity (Section 11.1)
+# Single user-assigned identity for CI/CD workflows
 # =============================================
 
-/*
-# Example placeholder for new Azure Front Door (recommended migration path)
-resource "azurerm_cdn_frontdoor_profile" "frontdoor" {
-  name                = "fd-ja-shared"
+# User-assigned managed identity for GitHub Actions OIDC
+resource "azurerm_user_assigned_identity" "github_ci" {
+  name                = "id-ja-github-ci"
   resource_group_name = var.rg_name
-  sku_name            = "Standard_AzureFrontDoor"
+  location            = var.location
   tags                = var.tags
 }
 
-resource "azurerm_cdn_frontdoor_endpoint" "endpoint" {
-  name                     = "endpoint-jashared"
-  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontdoor.id
-  tags                     = var.tags
+# Federated credential - links to your GitHub repo/branch
+resource "azurerm_federated_identity_credential" "github_ci_credential" {
+  name                = "github-ci-federated"
+  resource_group_name = var.rg_name
+  parent_id           = azurerm_user_assigned_identity.github_ci.id
+  audience            = ["api://AzureADTokenExchange"]  # ← FIXED: must be a list
+  issuer              = "https://token.actions.githubusercontent.com"
+  subject             = "repo:FelixCarballo/Accelerator.IAC:ref:refs/heads/main"  # ← CHANGE TO YOUR ACTUAL REPO & BRANCH
+  # Examples:
+  # repo:your-org/your-repo:ref:refs/heads/main
+  # repo:your-org/your-repo:ref:refs/heads/dev
+  # repo:your-org/your-repo:pull_request
+  # repo:your-org/your-repo:environment:prod
 }
 
-# ... add origin group, origins, routes, security policy/WAF when ready
-*/
+# RBAC role assignments - minimal least-privilege
+
+# 1. AcrPush for pushing images to shared ACR
+resource "azurerm_role_assignment" "github_acr_push" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPush"
+  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+}
+
+# 2. Azure Container Apps Contributor on all env RGs (deploy revisions)
+resource "azurerm_role_assignment" "github_container_dev" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-dev"
+  role_definition_name = "Azure Container Apps Contributor"
+  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+}
+
+resource "azurerm_role_assignment" "github_container_uat" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-uat"
+  role_definition_name = "Azure Container Apps Contributor"
+  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+}
+
+resource "azurerm_role_assignment" "github_container_prod" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-prod"
+  role_definition_name = "Azure Container Apps Contributor"
+  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+}
+
+# 3. Key Vault Secrets User (read secrets during workflow)
+resource "azurerm_role_assignment" "github_kv_secrets" {
+  scope                = azurerm_key_vault.kv.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+}
