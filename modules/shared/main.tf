@@ -48,14 +48,14 @@ resource "azurerm_nat_gateway_public_ip_association" "nat_assoc" {
   public_ip_address_id = azurerm_public_ip.nat_pip[count.index].id
 }
 
-# ACR Premium - CHANGE THIS NAME TO SOMETHING GLOBALLY UNIQUE
+# ACR – DOWNGRADED TO STANDARD SKU (as requested)
 resource "azurerm_container_registry" "acr" {
-  name                          = "felixjamacrs20260224"  # ← MUST BE UNIQUE – change if error
+  name                          = "jamacrs20260224"  # Your chosen name
   resource_group_name           = var.rg_name
   location                      = var.location
-  sku                           = "Premium"
+  sku                           = "Standard"  # ← Standard SKU
   admin_enabled                 = false
-  zone_redundancy_enabled       = true
+  zone_redundancy_enabled       = false  # ← FIXED: Must be false for Standard SKU
   public_network_access_enabled = false
   tags                          = var.tags
 }
@@ -91,7 +91,7 @@ resource "azurerm_private_dns_zone" "cosmos_mongo" {
 }
 
 # =============================================
-# NEW: GitHub OIDC Federation & Managed Identity (Section 11.1)
+# GitHub OIDC Federation & Managed Identity (Section 11.1)
 # Single user-assigned identity for CI/CD workflows
 # =============================================
 
@@ -108,14 +108,9 @@ resource "azurerm_federated_identity_credential" "github_ci_credential" {
   name                = "github-ci-federated"
   resource_group_name = var.rg_name
   parent_id           = azurerm_user_assigned_identity.github_ci.id
-  audience            = ["api://AzureADTokenExchange"]  # ← FIXED: must be a list
+  audience            = ["api://AzureADTokenExchange"]
   issuer              = "https://token.actions.githubusercontent.com"
-  subject             = "repo:FelixCarballo/Accelerator.IAC:ref:refs/heads/main"  # ← CHANGE TO YOUR ACTUAL REPO & BRANCH
-  # Examples:
-  # repo:your-org/your-repo:ref:refs/heads/main
-  # repo:your-org/your-repo:ref:refs/heads/dev
-  # repo:your-org/your-repo:pull_request
-  # repo:your-org/your-repo:environment:prod
+  subject             = "repo:FelixCarballo/Accelerator.IAC:ref:refs/heads/main"  # CHANGE TO YOUR ACTUAL REPO & BRANCH
 }
 
 # RBAC role assignments - minimal least-privilege
