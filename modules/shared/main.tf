@@ -116,11 +116,10 @@ resource "azurerm_user_assigned_identity" "github_ci" {
 # Federated credential - links to your GitHub repo/branch
 resource "azurerm_federated_identity_credential" "github_ci_credential" {
   name                = "github-ci-federated"
-  resource_group_name = var.rg_name
   parent_id           = azurerm_user_assigned_identity.github_ci.id
   audience            = ["api://AzureADTokenExchange"]
   issuer              = "https://token.actions.githubusercontent.com"
-  subject             = "repo:FelixCarballo/Accelerator.IAC:ref:refs/heads/main"  # CHANGE TO YOUR ACTUAL REPO & BRANCH
+  subject             = "repo:FelixCarballo/Accelerator.IAC:ref:refs/heads/main"  # Update if repo/branch changes
 }
 
 # RBAC role assignments - minimal least-privilege
