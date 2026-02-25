@@ -13,24 +13,23 @@ resource "azurerm_virtual_network" "spoke" {
   tags                = var.tags
 }
 
-# Subnets – adjusted for multi-AZ in PROD (count-based public subnets)
+# Public Subnet – single AZ for DEV/UAT, multi-AZ for PROD
 resource "azurerm_subnet" "public" {
   count                = var.az_count
   name                 = "snet-public-az${count.index + 1}"
   resource_group_name  = azurerm_resource_group.env.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 7, count.index)]
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 7, count.index)]  # /29 per AZ – good as-is
 }
 
+# Private App Subnet – spans AZs in PROD, single in DEV/UAT
 resource "azurerm_subnet" "private_app" {
   name                 = "snet-private-app"
   resource_group_name  = azurerm_resource_group.env.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, var.az_count)]
-
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, var.az_count)]  # /24 for DEV/UAT, adjust for PROD multi-AZ if needed
   delegation {
     name = "Microsoft.App/environments"
-
     service_delegation {
       name    = "Microsoft.App/environments"
       actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
@@ -38,19 +37,26 @@ resource "azurerm_subnet" "private_app" {
   }
 }
 
+# Private Endpoints Subnet – /27 (27 usable IPs) per doc
 resource "azurerm_subnet" "private_endpoints" {
   name                 = "snet-private-endpoints"
   resource_group_name  = azurerm_resource_group.env.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 11, 16)]
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 5, 4)]  # /27 – 32 IPs (27 usable), starting after public/private_app
 }
 
+# Private Management Subnet (optional) – /27 (27 usable IPs)
 resource "azurerm_subnet" "management" {
   name                 = "snet-private-management"
   resource_group_name  = azurerm_resource_group.env.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 11, 17)]
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 5, 5)]  # /27 – next block after private_endpoints
 }
+
+
+
+
+
 
 # Peering to shared hub
 resource "azurerm_virtual_network_peering" "spoke_to_hub" {
