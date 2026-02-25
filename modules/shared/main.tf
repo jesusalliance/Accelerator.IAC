@@ -48,14 +48,14 @@ resource "azurerm_nat_gateway_public_ip_association" "nat_assoc" {
   public_ip_address_id = azurerm_public_ip.nat_pip[count.index].id
 }
 
-# ACR – DOWNGRADED TO STANDARD SKU (as requested)
+# ACR – UPGRADED TO STANDARD SKU (as requested)
 resource "azurerm_container_registry" "acr" {
   name                          = "jamacrs20260224"  # Your chosen name
   resource_group_name           = var.rg_name
   location                      = var.location
-  sku                           = "Standard"  # ← Standard SKU
+  sku                           = "Premium"  # ← Premium SKU
   admin_enabled                 = false
-  zone_redundancy_enabled       = false  # ← FIXED: Must be false for Standard SKU
+  zone_redundancy_enabled       = true  # ← FIXED: Must be true for Premium SKU
   public_network_access_enabled = false
   tags                          = var.tags
 }
