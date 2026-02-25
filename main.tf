@@ -55,6 +55,7 @@ module "dev" {
   acr_login_server        = module.shared.acr_login_server
   log_analytics_id        = module.shared.log_analytics_id
   key_vault_id            = module.shared.key_vault_id
+  github_ci_principal_id = module.shared.github_ci_identity_principal_id  # from shared outputs
 
   depends_on = [module.shared]
 }
@@ -82,6 +83,8 @@ module "uat" {
   acr_login_server        = module.shared.acr_login_server
   log_analytics_id        = module.shared.log_analytics_id
   key_vault_id            = module.shared.key_vault_id
+  github_ci_principal_id = module.shared.github_ci_identity_principal_id  # from shared outputs
+
 
   depends_on = [module.shared]
 }
@@ -109,6 +112,8 @@ module "prod" {
   acr_login_server        = module.shared.acr_login_server
   log_analytics_id        = module.shared.log_analytics_id
   key_vault_id            = module.shared.key_vault_id
+  github_ci_principal_id = module.shared.github_ci_identity_principal_id  # from shared outputs
+
 
   depends_on = [module.shared]
 }

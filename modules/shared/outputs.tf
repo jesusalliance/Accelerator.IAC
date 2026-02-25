@@ -53,3 +53,4 @@ output "cosmos_private_dns_zone_id" {
   description = "ID of the shared Private DNS Zone for Cosmos DB MongoDB API"
   value       = azurerm_private_dns_zone.cosmos_mongo.id
 }
+

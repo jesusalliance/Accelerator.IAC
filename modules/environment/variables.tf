@@ -38,5 +38,12 @@ variable "shared_cosmos_dns_zone_id" {
   description = "ID of the shared Private DNS Zone for Cosmos DB (privatelink.mongo.cosmos.azure.com) from rg-ja-shared"
 }
 
+variable "github_ci_principal_id" {
+  type        = string
+  description = "Principal ID of the shared GitHub CI managed identity"
+}
+
+
+
 # Optional: If you ever need to override NAT per env (e.g., PROD uses HA NAT), but your current hub_nat_gateway_id already handles it conditionally in root
 # variable "shared_nat_gateway_id" { ... } → already covered by hub_nat_gateway_id

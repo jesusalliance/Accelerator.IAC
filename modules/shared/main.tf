@@ -134,23 +134,23 @@ resource "azurerm_role_assignment" "github_acr_push" {
 
 # 2. # Role assignments for GitHub CI identity to deploy to Container Apps
 # Using "Contributor" (built-in role) at RG level — allows full management of Container Apps in the RG
-resource "azurerm_role_assignment" "github_container_dev" {
-  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-dev"
-  role_definition_name = "Contributor"  # Correct built-in role (full RG control)
-  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
-}
+#resource "azurerm_role_assignment" "github_container_dev" {
+# scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-dev"
+# role_definition_name = "Contributor"  # Correct built-in role (full RG control)
+# principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+#}
 
-resource "azurerm_role_assignment" "github_container_uat" {
-  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-uat"
-  role_definition_name = "Contributor"  # Correct built-in role
-  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
-}
+#resource "azurerm_role_assignment" "github_container_uat" {
+#  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-uat"
+#  role_definition_name = "Contributor"  # Correct built-in role
+#  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+#}
 
-resource "azurerm_role_assignment" "github_container_prod" {
-  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-prod"
-  role_definition_name = "Contributor"  # Correct built-in role
-  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
-}
+#resource "azurerm_role_assignment" "github_container_prod" {
+#  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-prod"
+#  role_definition_name = "Contributor"  # Correct built-in role
+#  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+#}
 
 # 3. Key Vault Secrets User (read secrets during workflow)
 resource "azurerm_role_assignment" "github_kv_secrets" {

@@ -194,6 +194,14 @@ resource "azurerm_subnet_nat_gateway_association" "private_app_nat" {
   nat_gateway_id = var.hub_nat_gateway_id   # ← FIXED: Use existing var (passed from root main.tf)
 }
 
+
+# Role assignment for GitHub CI identity – allows deploying revisions to this env's Container Apps
+resource "azurerm_role_assignment" "github_ci_container_apps" {
+  scope                = azurerm_resource_group.env.id
+  role_definition_name = "Contributor"  # or "Azure Container Apps Environment Contributor" if available
+  principal_id         = var.github_ci_principal_id   # ← Use the passed variable
+}
+
 # Optional: Remove or comment out your old route table blocks if NAT association is sufficient
 # resource "azurerm_route_table" "spoke_rt" { ... }
 # resource "azurerm_subnet_route_table_association" "app_rt_assoc" { ... }
