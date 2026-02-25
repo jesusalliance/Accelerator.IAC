@@ -42,3 +42,9 @@ output "github_ci_subscription_id" {
   value       = data.azurerm_client_config.current.subscription_id
   description = "Azure Subscription ID for OIDC"
 }
+
+# NEW: Output for Cosmos DB Private DNS Zone (fixes Unsupported attribute error)
+output "cosmos_private_dns_zone_id" {
+  value       = azurerm_private_dns_zone.cosmos_mongo.id
+  description = "ID of the shared Private DNS Zone for Cosmos DB MongoDB API (privatelink.mongo.cosmos.azure.com)"
+}

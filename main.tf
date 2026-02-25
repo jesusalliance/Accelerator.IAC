@@ -44,7 +44,9 @@ module "dev" {
   replica_max             = 3
   zone_redundancy_enabled = false
   cosmos_zone_redundant   = false
-  backup_retention_hours  = 168
+  cosmos_max_throughput   = 4000               # DEV: low cost-optimized autoscale max
+  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id  # Add this for PE
+  backup_retention_hours  = 168                # 7 days (your original)
   ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "dev", "backup-enabled" = "true", "backup-policy" = "daily" })
 
@@ -69,6 +71,8 @@ module "uat" {
   replica_max             = 5
   zone_redundancy_enabled = false
   cosmos_zone_redundant   = false
+  cosmos_max_throughput   = 10000              # UAT: medium for validation
+  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
   backup_retention_hours  = 168
   ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "uat", "backup-enabled" = "true", "backup-policy" = "daily" })
@@ -94,12 +98,14 @@ module "prod" {
   replica_max             = 20
   zone_redundancy_enabled = true
   cosmos_zone_redundant   = true
-  backup_retention_hours  = 720
+  cosmos_max_throughput   = 20000              # PROD: higher for scale/HA
+  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
+  backup_retention_hours  = 720                # 30 days (your original; aligns with doc)
   ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "prod", "backup-enabled" = "true", "backup-policy" = "daily" })
 
   hub_vnet_id             = module.shared.hub_vnet_id
-  hub_nat_gateway_id      = module.shared.hub_nat_gateway_id_ha
+  hub_nat_gateway_id      = module.shared.hub_nat_gateway_id_ha  # HA for PROD
   acr_login_server        = module.shared.acr_login_server
   log_analytics_id        = module.shared.log_analytics_id
   key_vault_id            = module.shared.key_vault_id

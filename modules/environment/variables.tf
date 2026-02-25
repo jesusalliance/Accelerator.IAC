@@ -22,3 +22,21 @@ variable "front_door_id" {
   type    = string
   default = ""  # Empty by default
 }
+
+# ────────────────────────────────────────────────────────────────────────────────
+# New variables added for Cosmos autoscale, private endpoint, and NAT association
+# ────────────────────────────────────────────────────────────────────────────────
+
+variable "cosmos_max_throughput" {
+  type        = number
+  description = "Maximum RU/s for Cosmos DB autoscale (used on MongoDB database level)"
+  default     = 4000  # Will be overridden in root main.tf per environment
+}
+
+variable "shared_cosmos_dns_zone_id" {
+  type        = string
+  description = "ID of the shared Private DNS Zone for Cosmos DB (privatelink.mongo.cosmos.azure.com) from rg-ja-shared"
+}
+
+# Optional: If you ever need to override NAT per env (e.g., PROD uses HA NAT), but your current hub_nat_gateway_id already handles it conditionally in root
+# variable "shared_nat_gateway_id" { ... } → already covered by hub_nat_gateway_id

@@ -83,11 +83,21 @@ resource "azurerm_key_vault" "kv" {
   tags                        = var.tags
 }
 
-# Private DNS Zone (example for Cosmos MongoDB)
+# Private DNS Zone for Cosmos DB MongoDB API
 resource "azurerm_private_dns_zone" "cosmos_mongo" {
   name                = "privatelink.mongo.cosmos.azure.com"
   resource_group_name = var.rg_name
   tags                = var.tags
+}
+
+# NEW: Link the Private DNS Zone to the hub VNet (required for resolution)
+resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_mongo_hub" {
+  name                  = "link-hub-to-cosmos-mongo"
+  resource_group_name   = var.rg_name
+  private_dns_zone_name = azurerm_private_dns_zone.cosmos_mongo.name
+  virtual_network_id    = azurerm_virtual_network.hub.id
+  registration_enabled  = false
+  tags                  = var.tags
 }
 
 # =============================================
