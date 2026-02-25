@@ -53,9 +53,9 @@ resource "azurerm_container_registry" "acr" {
   name                          = "jamacrs20260224"  # Your chosen name
   resource_group_name           = var.rg_name
   location                      = var.location
-  sku                           = "Premium"  # ← Premium SKU
+  sku                           = "Standard"  # ← Standard SKU
   admin_enabled                 = false
-  zone_redundancy_enabled       = true  # ← FIXED: Must be true for Premium SKU
+  zone_redundancy_enabled       = false  # ← FIXED: Must be false for Standard SKU
   public_network_access_enabled = false
   tags                          = var.tags
 }
