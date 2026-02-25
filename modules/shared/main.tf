@@ -132,22 +132,22 @@ resource "azurerm_role_assignment" "github_acr_push" {
 }
 
 
-# 2. Azure Container Apps App Contributor on all env RGs (deploy revisions)
+# 2. # Role assignments for GitHub CI identity to deploy to Container Apps
 resource "azurerm_role_assignment" "github_container_dev" {
   scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-dev"
-  role_definition_name = "Azure Container Apps App Contributor"  # ← Correct built-in role name
+  role_definition_name = "Azure Container Apps Contributor"  # ← Correct built-in role name
   principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
 }
 
 resource "azurerm_role_assignment" "github_container_uat" {
   scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-uat"
-  role_definition_name = "Azure Container Apps App Contributor"  # ← Correct built-in role name
+  role_definition_name = "Azure Container Apps Contributor"  # ← Correct built-in role name
   principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
 }
 
 resource "azurerm_role_assignment" "github_container_prod" {
   scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/rg-ja-mma-prod"
-  role_definition_name = "Azure Container Apps App Contributor"  # ← Correct built-in role name
+  role_definition_name = "Azure Container Apps Contributor"  # ← Correct built-in role name
   principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
 }
 
