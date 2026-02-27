@@ -101,3 +101,32 @@ variable "backup_retention_hours" {
   type    = number
   default = 720
 }
+
+variable "appgw_sku" {
+  type        = string
+  description = "AppGW SKU (Standard_v2 for DEV/UAT, WAF_v2 for PROD)"
+}
+
+variable "appgw_capacity" {
+  type        = number
+  description = "AppGW autoscale min capacity"
+  default     = 2
+}
+
+variable "appgw_max_capacity" {
+  type        = number
+  description = "AppGW autoscale max capacity (higher for PROD)"
+  default     = 10
+}
+
+variable "appgw_backend_port" {
+  type        = number
+  description = "Backend port for Container App (e.g., 80 or 443)"
+  default     = 80
+}
+
+variable "appgw_health_path" {
+  type        = string
+  description = "Health probe path for backend"
+  default     = "/health"
+}

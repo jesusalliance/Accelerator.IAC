@@ -226,3 +226,100 @@ resource "azurerm_private_endpoint" "acr_pe" {
     private_dns_zone_ids = [var.shared_acr_dns_zone_id]
   }
 }
+
+# Public IP for AppGW frontend
+resource "azurerm_public_ip" "appgw_pip" {
+  name                = "pip-appgw-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  zones               = var.zone_redundancy_enabled ? ["1", "2"] : null  # Multi-AZ for PROD
+  tags                = var.tags
+}
+
+# Application Gateway (in public subnet AZ1)
+resource "azurerm_application_gateway" "appgw" {
+  name                = "appgw-ja-mma-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+  zones               = var.zone_redundancy_enabled ? ["1", "2"] : null  # Multi-AZ for PROD
+
+  sku {
+    name     = var.appgw_sku  # Standard_v2 or WAF_v2
+    tier     = var.appgw_sku
+  }
+
+  autoscale_configuration {
+    min_capacity = var.appgw_capacity
+    max_capacity = var.appgw_max_capacity
+  }
+
+  gateway_ip_configuration {
+    name      = "gateway-ip-config"
+    subnet_id = azurerm_subnet.public[0].id  # First public subnet (AZ1)
+  }
+
+  frontend_port {
+    name = "https-port"
+    port = 443
+  }
+
+  frontend_ip_configuration {
+    name                 = "frontend-ip"
+    public_ip_address_id = azurerm_public_ip.appgw_pip.id
+  }
+
+  backend_address_pool {
+    name         = "backend-pool"
+    fqdns        = [azurerm_container_app.frontend.ingress[0].fqdn]  # Assume built-in ingress FQDN; adjust if internal
+  }
+
+  backend_http_settings {
+    name                  = "http-settings"
+    cookie_based_affinity = "Disabled"
+    port                  = var.appgw_backend_port
+    protocol              = "Http"
+    request_timeout       = 60
+    probe_name            = "health-probe"
+  }
+
+  http_listener {
+    name                           = "https-listener"
+    frontend_ip_configuration_name = "frontend-ip"
+    frontend_port_name             = "https-port"
+    protocol                       = "Https"
+  }
+
+  request_routing_rule {
+    name                       = "routing-rule"
+    rule_type                  = "Basic"
+    priority                   = 100
+    http_listener_name         = "https-listener"
+    backend_address_pool_name  = "backend-pool"
+    backend_http_settings_name = "http-settings"
+  }
+
+  probe {
+    name                = "health-probe"
+    host                = azurerm_container_app.frontend.ingress[0].fqdn  # Or custom host
+    protocol            = "Http"
+    path                = var.appgw_health_path
+    interval            = 30
+    timeout             = 30
+    unhealthy_threshold = 3
+  }
+
+  # WAF config if WAF_v2 (conditional)
+  dynamic "waf_configuration" {
+    for_each = var.appgw_sku == "WAF_v2" ? [1] : []
+    content {
+      enabled          = true
+      firewall_mode    = "Prevention"
+      rule_set_type    = "OWASP"
+      rule_set_version = "3.2"
+    }
+  }
+
+  tags = var.tags
+}

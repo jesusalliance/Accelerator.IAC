@@ -25,6 +25,16 @@ output "backend_app_id" {
   description = "Backend Container App ID"
 }
 
+output "appgw_public_ip" {
+  value       = azurerm_public_ip.appgw_pip.ip_address
+  description = "Public IP of the Application Gateway"
+}
+
+output "appgw_fqdn" {
+  value       = azurerm_public_ip.appgw_pip.dns_settings[0].fqdn  # If DNS configured; otherwise null
+  description = "FQDN of the Application Gateway (if DNS set)"
+}
+
 # Uncomment when Cosmos resource is fully added
 # output "cosmos_endpoint" {
 #   value       = azurerm_cosmosdb_account.cosmos.endpoint

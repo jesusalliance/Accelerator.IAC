@@ -71,6 +71,11 @@ module "dev" {
   ingress_type           = "app_gateway"
   cosmos_zone_redundant  = false
   backup_retention_hours = 168
+  appgw_sku = "Standard_v2"
+  appgw_capacity = 2
+  appgw_max_capacity = 5  # Low for DEV
+  appgw_backend_port = 80
+  appgw_health_path = "/health"
 
   depends_on = [module.shared]
 }
@@ -110,6 +115,12 @@ module "uat" {
   ingress_type           = "app_gateway"
   cosmos_zone_redundant  = false
   backup_retention_hours = 168
+  appgw_sku = "Standard_v2"
+  appgw_capacity = 2
+  appgw_max_capacity = 10  # Hiher for UAT
+  appgw_backend_port = 80
+  appgw_health_path = "/health"
+
 
   depends_on = [module.shared]
 }
@@ -149,6 +160,12 @@ module "prod" {
   ingress_type           = "app_gateway"
   cosmos_zone_redundant  = true
   backup_retention_hours = 720
+  appgw_sku = "Standard_v2"
+  appgw_capacity = 2
+  appgw_max_capacity = 20  # Higer for PROD
+  appgw_backend_port = 80
+  appgw_health_path = "/health"
+
 
   depends_on = [module.shared]
 }
