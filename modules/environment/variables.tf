@@ -1,50 +1,103 @@
-variable "environment" { type = string }
-variable "rg_name" { type = string }
-variable "location" { type = string }
-variable "vnet_cidr" { type = string }
-variable "az_count" { type = number }
-variable "replica_min" { type = number }
-variable "replica_max" { type = number }
-variable "zone_redundancy_enabled" { type = bool }
-variable "cosmos_zone_redundant" { type = bool }
-variable "backup_retention_hours" { type = number }
-variable "ingress_type" { type = string }
-variable "tags" { type = map(string) }
+# =============================================
+# modules/environment/variables.tf
+# Input variables for environment module
+# =============================================
 
-variable "hub_vnet_id" { type = string }
-variable "hub_nat_gateway_id" { type = string }
-variable "acr_login_server" { type = string }
-variable "log_analytics_id" { type = string }
-variable "key_vault_id" { type = string }
-
-# Made optional - classic Front Door deprecated; will use new Front Door later
-variable "front_door_id" {
-  type    = string
-  default = ""  # Empty by default
+variable "environment" {
+  type        = string
+  description = "Environment name (dev, uat, prod)"
 }
 
-# ────────────────────────────────────────────────────────────────────────────────
-# New variables added for Cosmos autoscale, private endpoint, and NAT association
-# ────────────────────────────────────────────────────────────────────────────────
+variable "rg_name" {
+  type        = string
+  description = "Resource Group name"
+}
 
-variable "cosmos_max_throughput" {
-  type        = number
-  description = "Maximum RU/s for Cosmos DB autoscale (used on MongoDB database level)"
-  default     = 4000  # Will be overridden in root main.tf per environment
+variable "location" {
+  type        = string
+  description = "Azure region"
+}
+
+variable "vnet_cidr" {
+  type        = string
+  description = "CIDR for spoke VNet"
+}
+
+variable "az_count" {
+  type    = number
+  default = 1
+}
+
+variable "replica_min" {
+  type = number
+}
+
+variable "replica_max" {
+  type = number
+}
+
+variable "zone_redundancy_enabled" {
+  type    = bool
+  default = false
+}
+
+variable "hub_vnet_id" {
+  type = string
+}
+
+variable "hub_firewall_private_ip" {
+  type = string
+}
+
+variable "hub_firewall_id" {
+  type = string
+}
+
+variable "acr_login_server" {
+  type = string
+}
+
+variable "log_analytics_id" {
+  type = string
 }
 
 variable "shared_cosmos_dns_zone_id" {
-  type        = string
-  description = "ID of the shared Private DNS Zone for Cosmos DB (privatelink.mongo.cosmos.azure.com) from rg-ja-shared"
-}
-
-variable "github_ci_principal_id" {
-  type        = string
-  description = "Principal ID of the shared GitHub CI managed identity"
+  type = string
 }
 
 variable "shared_acr_dns_zone_id" {
-  type        = string
-  description = "ID of shared Private DNS Zone for ACR (privatelink.azurecr.io)"
+  type = string
 }
 
+variable "github_ci_principal_id" {
+  type = string
+}
+
+variable "key_vault_id" {
+  type = string
+}
+
+variable "acr_id" {
+  type    = string
+  default = null
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
+
+variable "ingress_type" {
+  type    = string
+  default = "app_gateway"
+}
+
+variable "cosmos_zone_redundant" {
+  type    = bool
+  default = true
+}
+
+variable "backup_retention_hours" {
+  type    = number
+  default = 720
+}
