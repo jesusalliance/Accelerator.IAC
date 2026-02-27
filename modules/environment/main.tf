@@ -216,7 +216,7 @@ resource "azurerm_private_endpoint" "acr_pe" {
 
   private_service_connection {
     name                           = "psc-acr-${var.environment}"
-    private_connection_resource_id = var.acr_id  # Pass from shared if needed
+    private_connection_resource_id = var.acr_id
     is_manual_connection           = false
     subresource_names              = ["registry"]
   }

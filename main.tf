@@ -59,6 +59,7 @@ module "dev" {
   shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
+  acr_id                    = module.shared.acr_id
 
   # Define tags locally (no reference to module.shared.tags)
   tags = {
@@ -98,6 +99,7 @@ module "uat" {
   shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
+  acr_id                    = module.shared.acr_id
 
   tags = {
     environment = "uat"
@@ -136,6 +138,7 @@ module "prod" {
   shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
+  acr_id                    = module.shared.acr_id
 
   tags = {
     environment = "prod"

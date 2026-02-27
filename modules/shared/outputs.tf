@@ -47,3 +47,8 @@ output "acr_private_dns_zone_id" {
   value       = azurerm_private_dns_zone.acr.id
   description = "ID of the private DNS zone for ACR"
 }
+
+output "acr_id" {
+  value       = azurerm_container_registry.acr.id
+  description = "Resource ID of the shared ACR"
+}
