@@ -60,6 +60,7 @@ resource "azurerm_container_registry" "acr" {
   tags                          = var.tags
 }
 
+
 # Log Analytics
 resource "azurerm_log_analytics_workspace" "logs" {
   name                = "log-ja-shared"
@@ -89,6 +90,22 @@ resource "azurerm_private_dns_zone" "cosmos_mongo" {
   resource_group_name = var.rg_name
   tags                = var.tags
 }
+
+resource "azurerm_private_dns_zone" "acr" {
+  name                = "privatelink.azurecr.io"
+  resource_group_name = var.rg_name
+  tags                = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_hub" {
+  name                  = "link-hub-to-acr"
+  resource_group_name   = var.rg_name
+  private_dns_zone_name = azurerm_private_dns_zone.acr.name
+  virtual_network_id    = azurerm_virtual_network.hub.id
+  registration_enabled  = false
+  tags                  = var.tags
+}
+
 
 # NEW: Link the Private DNS Zone to the hub VNet (required for resolution)
 resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_mongo_hub" {

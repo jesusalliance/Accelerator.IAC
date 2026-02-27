@@ -43,7 +43,8 @@ variable "github_ci_principal_id" {
   description = "Principal ID of the shared GitHub CI managed identity"
 }
 
+variable "shared_acr_dns_zone_id" {
+  type        = string
+  description = "ID of shared Private DNS Zone for ACR (privatelink.azurecr.io)"
+}
 
-
-# Optional: If you ever need to override NAT per env (e.g., PROD uses HA NAT), but your current hub_nat_gateway_id already handles it conditionally in root
-# variable "shared_nat_gateway_id" { ... } → already covered by hub_nat_gateway_id

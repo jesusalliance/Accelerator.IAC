@@ -54,3 +54,8 @@ output "cosmos_private_dns_zone_id" {
   value       = azurerm_private_dns_zone.cosmos_mongo.id
 }
 
+output "acr_private_dns_zone_id" {
+  description = "ID of the shared Private DNS Zone for ACR (privatelink.azurecr.io)"
+  value       = azurerm_private_dns_zone.acr.id  # adjust resource name if different
+}
+

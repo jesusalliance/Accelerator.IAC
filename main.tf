@@ -38,7 +38,7 @@ module "dev" {
   environment             = "dev"
   rg_name                 = "rg-ja-mma-dev"
   location                = var.location
-  vnet_cidr               = "10.10.0.0/22"
+  vnet_cidr               = "10.10.0.0/21"
   az_count                = 1
   replica_min             = 1
   replica_max             = 3
@@ -46,6 +46,7 @@ module "dev" {
   cosmos_zone_redundant   = false
   cosmos_max_throughput   = 4000               # DEV: low cost-optimized autoscale max
   shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id  # Add this for PE
+  shared_acr_dns_zone_id = module.shared.acr_private_dns_zone_id
   backup_retention_hours  = 168                # 7 days (your original)
   ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "dev", "backup-enabled" = "true", "backup-policy" = "daily" })
@@ -66,7 +67,7 @@ module "uat" {
   environment             = "uat"
   rg_name                 = "rg-ja-mma-uat"
   location                = var.location
-  vnet_cidr               = "10.20.0.0/22"
+  vnet_cidr               = "10.20.0.0/21"
   az_count                = 1
   replica_min             = 1
   replica_max             = 5
@@ -74,6 +75,7 @@ module "uat" {
   cosmos_zone_redundant   = false
   cosmos_max_throughput   = 10000              # UAT: medium for validation
   shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
+  shared_acr_dns_zone_id = module.shared.acr_private_dns_zone_id
   backup_retention_hours  = 168
   ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "uat", "backup-enabled" = "true", "backup-policy" = "daily" })
@@ -95,7 +97,7 @@ module "prod" {
   environment             = "prod"
   rg_name                 = "rg-ja-mma-prod"
   location                = var.location
-  vnet_cidr               = "10.30.0.0/22"
+  vnet_cidr               = "10.30.0.0/21"
   az_count                = 2
   replica_min             = 1
   replica_max             = 20
@@ -103,6 +105,7 @@ module "prod" {
   cosmos_zone_redundant   = true
   cosmos_max_throughput   = 20000              # PROD: higher for scale/HA
   shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
+  shared_acr_dns_zone_id = module.shared.acr_private_dns_zone_id
   backup_retention_hours  = 720                # 30 days (your original; aligns with doc)
   ingress_type            = "app_gateway"
   tags                    = merge(local.common_tags, { environment = "prod", "backup-enabled" = "true", "backup-policy" = "daily" })

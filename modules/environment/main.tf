@@ -4,30 +4,31 @@ resource "azurerm_resource_group" "env" {
   tags     = var.tags
 }
 
-# Spoke VNet
+# Spoke VNet – /21 for all environments
 resource "azurerm_virtual_network" "spoke" {
   name                = "vnet-ja-mma-${var.environment}"
   resource_group_name = azurerm_resource_group.env.name
   location            = var.location
-  address_space       = [var.vnet_cidr]
+  address_space       = [var.vnet_cidr]  # /21
   tags                = var.tags
 }
 
-# Public Subnet – single AZ for DEV/UAT, multi-AZ for PROD
+# Public Subnets – one /24 per AZ (1 for DEV/UAT, 2 for PROD)
 resource "azurerm_subnet" "public" {
-  count                = var.az_count
+  count                = var.az_count  # 1 for DEV/UAT, 2 for PROD
   name                 = "snet-public-az${count.index + 1}"
   resource_group_name  = azurerm_resource_group.env.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 7, count.index)]  # /29 per AZ – good as-is
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 3, count.index)]  # /24 per AZ, sequential (netnum = count.index)
 }
 
-# Private App Subnet – spans AZs in PROD, single in DEV/UAT
+# Private App Subnet – single /24 (spans AZs in PROD)
 resource "azurerm_subnet" "private_app" {
   name                 = "snet-private-app"
   resource_group_name  = azurerm_resource_group.env.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 8, var.az_count)]  # /24 for DEV/UAT, adjust for PROD multi-AZ if needed
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 3, var.az_count)]  # /24, starts after public subnets
+
   delegation {
     name = "Microsoft.App/environments"
     service_delegation {
@@ -37,26 +38,21 @@ resource "azurerm_subnet" "private_app" {
   }
 }
 
-# Private Endpoints Subnet – /27 (27 usable IPs) per doc
-resource "azurerm_subnet" "private_endpoints" {
-  name                 = "snet-private-endpoints"
-  resource_group_name  = azurerm_resource_group.env.name
-  virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 5, 4)]  # /27 – 32 IPs (27 usable), starting after public/private_app
-}
-
-# Private Management Subnet (optional) – /27 (27 usable IPs)
+# Private Management Subnet – single /24 (spans AZs in PROD)
 resource "azurerm_subnet" "management" {
   name                 = "snet-private-management"
   resource_group_name  = azurerm_resource_group.env.name
   virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [cidrsubnet(var.vnet_cidr, 5, 5)]  # /27 – next block after private_endpoints
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 3, var.az_count + 1)]  # /24, starts after private_app
 }
 
-
-
-
-
+# Private Endpoints Subnet – single /24 (spans AZs in PROD)
+resource "azurerm_subnet" "private_endpoints" {
+  name                 = "snet-private-endpoints"
+  resource_group_name  = azurerm_resource_group.env.name
+  virtual_network_name = azurerm_virtual_network.spoke.name
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 3, var.az_count + 2)]  # /24, starts after management
+}
 
 # Peering to shared hub
 resource "azurerm_virtual_network_peering" "spoke_to_hub" {
@@ -68,15 +64,16 @@ resource "azurerm_virtual_network_peering" "spoke_to_hub" {
   allow_forwarded_traffic      = true
 }
 
-# Container Apps Environment
 resource "azurerm_container_app_environment" "cae" {
   name                         = "cae-ja-mma-${var.environment}"
   resource_group_name          = azurerm_resource_group.env.name
   location                     = var.location
   infrastructure_subnet_id     = azurerm_subnet.private_app.id
   log_analytics_workspace_id   = var.log_analytics_id
-  zone_redundancy_enabled      = var.zone_redundancy_enabled  # true for PROD
+  zone_redundancy_enabled      = var.zone_redundancy_enabled
   tags                         = var.tags
+
+ 
 }
 
 # Example Frontend Container App (add backend similarly when ready)
@@ -170,7 +167,7 @@ resource "azurerm_cosmosdb_mongo_collection" "portal_data" {
   }
 }
 
-# Private Endpoint for Cosmos DB
+# Private Endpoint for Cosmos DB (private-by-default)
 resource "azurerm_private_endpoint" "cosmos_pe" {
   name                = "pe-cosmos-ja-mma-${var.environment}"
   location            = var.location
@@ -208,6 +205,31 @@ resource "azurerm_role_assignment" "github_ci_container_apps" {
   principal_id         = var.github_ci_principal_id   # ← Use the passed variable
 }
 
-# Optional: Remove or comment out your old route table blocks if NAT association is sufficient
-# resource "azurerm_route_table" "spoke_rt" { ... }
-# resource "azurerm_subnet_route_table_association" "app_rt_assoc" { ... }
+
+# Private Endpoint for Shared ACR (allows private pull from Container Apps)
+resource "azurerm_private_endpoint" "acr_pe" {
+  name                = "pe-acr-ja-mma-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+  subnet_id           = azurerm_subnet.private_endpoints.id  # same subnet as Cosmos PE
+
+  private_service_connection {
+    name                           = "psc-acr-${var.environment}"
+    private_connection_resource_id = data.azurerm_container_registry.shared_acr.id  # reference shared ACR
+    is_manual_connection           = false
+    subresource_names              = ["registry"]
+  }
+
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [var.shared_acr_dns_zone_id]  # Need this variable/output from shared
+  }
+
+  tags = var.tags
+}
+
+# Data source for shared ACR
+data "azurerm_container_registry" "shared_acr" {
+  name                = "jamacrs20260224"  # your ACR name
+  resource_group_name = "rg-ja-shared"
+}
