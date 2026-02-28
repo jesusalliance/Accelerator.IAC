@@ -31,7 +31,7 @@ It implements the exact target architecture defined in the official design docum
 
 Full details are in the design document:
 
-> **JA_MMA_Archtecture-Design - v3.0.pdf** (recommended to add this file to the repo root)
+> **JA_MMA_Archtecture-Design - v3.0.pdf** (recommended to add this file to the repo root or link to it)
 
 Key sections covered by this IaC:
 - 2.0 Resource Group Structure
@@ -47,19 +47,19 @@ Key sections covered by this IaC:
 
 ## Repository Structure
 
-```bash
+```text
 .
 ├── modules/                          # Reusable Terraform modules
 │   ├── shared/                       # rg-ja-shared (hub + platform services)
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
-│   │   └── README.md
+│   │   └── README.md                 (optional - create if needed)
 │   └── environment/                  # Per-environment spoke resources
 │       ├── main.tf
 │       ├── variables.tf
 │       ├── outputs.tf
-│       └── README.md
+│       └── README.md                 (optional)
 │
 ├── environments/                     # Environment-specific configuration
 │   ├── main.tf
@@ -81,5 +81,4 @@ Key sections covered by this IaC:
 ├── outputs.tf
 ├── dev-plan.tfplan
 ├── shared-plan.tfplan
-└── README.md
-
+└── README.md                         # ← You are here
