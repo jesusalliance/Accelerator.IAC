@@ -1,8 +1,4 @@
-# =============================================
-# main.tf (root) - UPDATED TO v3.0
-# Jesus Alliance MMA Portal - Terraform Root
-# Deploys Shared → DEV → UAT → PROD
-# =============================================
+# main.tf (root) - Jesus Alliance MMA Portal - Updated to match shared outputs
 
 terraform {
   required_providers {
@@ -17,9 +13,6 @@ provider "azurerm" {
   features {}
 }
 
-# =============================================
-# SHARED INFRASTRUCTURE
-# =============================================
 module "shared" {
   source = "./modules/shared"
 
@@ -32,9 +25,6 @@ module "shared" {
   }
 }
 
-# =============================================
-# DEV
-# =============================================
 module "dev" {
   source = "./modules/environment"
 
@@ -63,7 +53,7 @@ module "dev" {
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_id
+  frontdoor_id              = module.shared.frontdoor_profile_id   # FIXED: use correct output name
 
   tags = {
     environment = "dev"
@@ -74,9 +64,6 @@ module "dev" {
   depends_on = [module.shared]
 }
 
-# =============================================
-# UAT
-# =============================================
 module "uat" {
   source = "./modules/environment"
 
@@ -105,7 +92,7 @@ module "uat" {
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_id
+  frontdoor_id              = module.shared.frontdoor_profile_id   # FIXED
 
   tags = {
     environment = "uat"
@@ -116,9 +103,6 @@ module "uat" {
   depends_on = [module.shared]
 }
 
-# =============================================
-# PROD
-# =============================================
 module "prod" {
   source = "./modules/environment"
 
@@ -147,7 +131,7 @@ module "prod" {
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_id
+  frontdoor_id              = module.shared.frontdoor_profile_id   # FIXED
 
   tags = {
     environment = "prod"
@@ -158,7 +142,7 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# Root Outputs
+# Root outputs
 output "shared_acr_login_server" { value = module.shared.acr_login_server }
 output "shared_firewall_private_ip" { value = module.shared.hub_firewall_private_ip }
 output "shared_hub_vnet_id" { value = module.shared.hub_vnet_id }
