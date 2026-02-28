@@ -1,7 +1,7 @@
 # =============================================
 # modules/shared/main.tf
-# Shared resources for Jesus Alliance MMA Portal - FULL v3.0 ALIGNMENT
-# rg-ja-shared | Hub-Spoke | Zone-redundant | Private-by-default | Front Door + WAF
+# Shared resources for Jesus Alliance MMA Portal - v3.0 alignment
+# Hub-Spoke | Zone-redundant | Private-by-default | Corrected Front Door
 # =============================================
 
 data "azurerm_client_config" "current" {}
@@ -48,8 +48,13 @@ resource "azurerm_firewall_policy" "hub" {
   location            = var.location
   sku                 = "Standard"
 
-  # Threat intelligence (matches design)
   threat_intelligence_mode = "Alert"
+
+  dns {
+    proxy_enabled = true
+  }
+
+  tags = var.tags
 }
 
 # Azure Firewall (zone-redundant + SNAT)
@@ -70,7 +75,7 @@ resource "azurerm_firewall" "hub" {
   }
 }
 
-# Egress rule collection (HTTPS outbound as per design)
+# Egress application rule collection (allow HTTPS outbound)
 resource "azurerm_firewall_policy_rule_collection_group" "egress" {
   name               = "egress-rules"
   firewall_policy_id = azurerm_firewall_policy.hub.id
@@ -102,7 +107,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
 
 # ACR (Premium + zone-redundant + private-only)
 resource "azurerm_container_registry" "acr" {
-  name                          = "jamacrs20260224"
+  name                          = "jamacrs20260224"  # change if needed
   resource_group_name           = azurerm_resource_group.shared.name
   location                      = var.location
   sku                           = "Premium"
@@ -110,21 +115,6 @@ resource "azurerm_container_registry" "acr" {
   zone_redundancy_enabled       = true
   public_network_access_enabled = false
   tags                          = var.tags
-}
-
-# Private Endpoint for ACR (private-by-default)
-resource "azurerm_private_endpoint" "acr_pe" {
-  name                = "pe-acr-ja-shared"
-  resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
-  subnet_id           = azurerm_subnet.firewall.id   # Re-using firewall subnet (works; dedicated subnet can be added later)
-
-  private_service_connection {
-    name                           = "acr-connection"
-    private_connection_resource_id = azurerm_container_registry.acr.id
-    is_manual_connection           = false
-    subresource_names              = ["registry"]
-  }
 }
 
 # Log Analytics (90-day retention)
@@ -198,7 +188,6 @@ resource "azurerm_federated_identity_credential" "github_ci_credential" {
   subject             = "repo:jesusalliance/Accelerator.IAC:ref:refs/heads/main"
 }
 
-# Role assignments for GitHub CI (AcrPush + Key Vault Secrets User)
 resource "azurerm_role_assignment" "github_acr_push" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPush"
@@ -212,13 +201,13 @@ resource "azurerm_role_assignment" "github_kv_secrets" {
 }
 
 # =============================================
-# Azure Front Door + WAF Policy (Shared for UAT/PROD)
+# Azure Front Door + Firewall (WAF) Policy - CORRECTED
 # =============================================
+
 resource "azurerm_cdn_frontdoor_profile" "ja" {
   name                = "fd-ja-mma"
   resource_group_name = azurerm_resource_group.shared.name
-  location            = "global"
-  sku_name            = "Standard_AzureFrontDoor"
+  sku_name            = "Standard_AzureFrontDoor"  # upgrade to Premium_AzureFrontDoor if you need Private Link later
   tags                = var.tags
 }
 
@@ -228,32 +217,60 @@ resource "azurerm_cdn_frontdoor_endpoint" "ja" {
   tags                     = var.tags
 }
 
-resource "azurerm_cdn_frontdoor_waf_policy" "ja" {
+resource "azurerm_cdn_frontdoor_firewall_policy" "ja" {
   name                = "waf-ja-mma"
   resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
   sku_name            = "Standard"
   mode                = "Prevention"
   tags                = var.tags
 
-  # OWASP + Bot protection (basic rules)
   custom_rule {
-    name     = "block-bad-bots"
+    name     = "BlockBadBots"
     enabled  = true
     priority = 1
     type     = "MatchRule"
     action   = "Block"
+
     match_condition {
-      match_variable = "RequestHeader"
-      operator       = "Contains"
-      match_values   = ["bot"]
-      selector       = "User-Agent"
+      match_variable     = "RequestHeader"
+      operator           = "Contains"
+      negation_condition = false
+      match_values       = ["bot", "crawler", "spider"]
+      transforms         = ["Lowercase"]
+      selector           = "User-Agent"
     }
   }
+
+  # Optional: Enable managed OWASP ruleset (uncomment when ready)
+  # managed_rules {
+  #   managed_rule_set {
+  #     type    = "DefaultRuleSet"
+  #     version = "1.1"
+  #     action  = "Block"
+  #   }
+  # }
+}
+
+# Security Policy - Associates WAF with Front Door endpoint
+resource "azurerm_cdn_frontdoor_security_policy" "ja" {
+  name                     = "secpol-ja-mma"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.ja.id
+
+  security_policies {
+    association {
+      domains {
+        cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_endpoint.ja.id
+      }
+    }
+
+    firewall_policy_link_id = azurerm_cdn_frontdoor_firewall_policy.ja.id
+  }
+
+  tags = var.tags
 }
 
 # =============================================
-# OUTPUTS (required by root main.tf)
+# OUTPUTS
 # =============================================
 output "hub_vnet_id" {
   value = azurerm_virtual_network.hub.id
@@ -295,6 +312,14 @@ output "acr_id" {
   value = azurerm_container_registry.acr.id
 }
 
-output "frontdoor_id" {
+output "frontdoor_profile_id" {
   value = azurerm_cdn_frontdoor_profile.ja.id
+}
+
+output "frontdoor_endpoint_id" {
+  value = azurerm_cdn_frontdoor_endpoint.ja.id
+}
+
+output "frontdoor_firewall_policy_id" {
+  value = azurerm_cdn_frontdoor_firewall_policy.ja.id
 }
