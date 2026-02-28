@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - Updated to match shared outputs + peerings + GitHub roles
+# main.tf (root) - Jesus Alliance MMA Portal - Updated to match shared outputs + FULL NETWORKING FIX
 
 terraform {
   required_providers {
@@ -43,18 +43,11 @@ module "dev" {
   appgw_capacity          = 2
   appgw_max_capacity      = 5
 
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"
+  hub_firewall_private_ip = module.shared.hub_firewall_private_ip
+  acr_login_server        = module.shared.acr_login_server
+  log_analytics_id        = module.shared.log_analytics_id
+  github_ci_principal_id  = module.shared.github_ci_identity_principal_id
+  shared_rg_name          = module.shared.rg_name
 
   tags = {
     environment = "dev"
@@ -83,18 +76,11 @@ module "uat" {
   appgw_capacity          = 2
   appgw_max_capacity      = 10
 
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"
+  hub_firewall_private_ip = module.shared.hub_firewall_private_ip
+  acr_login_server        = module.shared.acr_login_server
+  log_analytics_id        = module.shared.log_analytics_id
+  github_ci_principal_id  = module.shared.github_ci_identity_principal_id
+  shared_rg_name          = module.shared.rg_name
 
   tags = {
     environment = "uat"
@@ -123,18 +109,11 @@ module "prod" {
   appgw_capacity          = 3
   appgw_max_capacity      = 20
 
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"
+  hub_firewall_private_ip = module.shared.hub_firewall_private_ip
+  acr_login_server        = module.shared.acr_login_server
+  log_analytics_id        = module.shared.log_analytics_id
+  github_ci_principal_id  = module.shared.github_ci_identity_principal_id
+  shared_rg_name          = module.shared.rg_name
 
   tags = {
     environment = "prod"
@@ -145,59 +124,65 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# Bidirectional VNet peerings (hub <-> spokes) - REQUIRED for private connectivity (design 4.0 & 9.0)
-resource "azurerm_virtual_network_peering" "hub_to_dev" {
-  name                         = "peer-hub-to-dev"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.dev.vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-}
-
+# Hub-Spoke bidirectional peering (PDF 4.0 + 9.0) - required for private connectivity + UDR
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
-  name                         = "peer-dev-to-hub"
-  resource_group_name          = module.dev.rg_name
-  virtual_network_name         = "vnet-ja-mma-dev"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
+  name                      = "peer-dev-to-hub"
+  resource_group_name       = module.dev.rg_name
+  virtual_network_name      = "vnet-ja-mma-dev"
+  remote_virtual_network_id = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
 }
 
-resource "azurerm_virtual_network_peering" "hub_to_uat" {
-  name                         = "peer-hub-to-uat"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.uat.vnet_id
+resource "azurerm_virtual_network_peering" "hub_to_dev" {
+  name                      = "peer-hub-to-dev"
+  resource_group_name       = module.shared.rg_name
+  virtual_network_name      = "vnet-ja-hub"
+  remote_virtual_network_id = module.dev.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
 }
 
 resource "azurerm_virtual_network_peering" "uat_to_hub" {
-  name                         = "peer-uat-to-hub"
-  resource_group_name          = module.uat.rg_name
-  virtual_network_name         = "vnet-ja-mma-uat"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
+  name                      = "peer-uat-to-hub"
+  resource_group_name       = module.uat.rg_name
+  virtual_network_name      = "vnet-ja-mma-uat"
+  remote_virtual_network_id = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
 }
 
-resource "azurerm_virtual_network_peering" "hub_to_prod" {
-  name                         = "peer-hub-to-prod"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.prod.vnet_id
+resource "azurerm_virtual_network_peering" "hub_to_uat" {
+  name                      = "peer-hub-to-uat"
+  resource_group_name       = module.shared.rg_name
+  virtual_network_name      = "vnet-ja-hub"
+  remote_virtual_network_id = module.uat.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
 }
 
 resource "azurerm_virtual_network_peering" "prod_to_hub" {
-  name                         = "peer-prod-to-hub"
-  resource_group_name          = module.prod.rg_name
-  virtual_network_name         = "vnet-ja-mma-prod"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
+  name                      = "peer-prod-to-hub"
+  resource_group_name       = module.prod.rg_name
+  virtual_network_name      = "vnet-ja-mma-prod"
+  remote_virtual_network_id = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_prod" {
+  name                      = "peer-hub-to-prod"
+  resource_group_name       = module.shared.rg_name
+  virtual_network_name      = "vnet-ja-hub"
+  remote_virtual_network_id = module.prod.vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
 }
 
 # Root outputs
