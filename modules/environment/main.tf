@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (subnet fix to /24 + DNS fix + GitHub CI role)
+# modules/environment/main.tf - FINAL VERSION (syntax fixed + ingress block corrected for azurerm ~>4.0 + PDF networking exact)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -106,4 +106,203 @@ resource "azurerm_network_security_group" "public_nsg" {
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
-   
+    source_port_range          = "*"
+    destination_port_ranges    = ["80", "443"]
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+  tags = var.tags
+}
+
+resource "azurerm_network_security_group" "private_app_nsg" {
+  name                = "nsg-private-app-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+
+  security_rule {
+    name                       = "AllowFromPublicSubnet"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["80", "443"]
+    source_address_prefixes    = local.public_subnet_cidrs
+    destination_address_prefix = "*"
+  }
+  tags = var.tags
+}
+
+resource "azurerm_network_security_group" "db_nsg" {
+  name                = "nsg-db-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+
+  security_rule {
+    name                       = "AllowFromPrivateApp"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_ranges    = ["443"]
+    source_address_prefix      = local.private_app_cidr
+    destination_address_prefix = "*"
+  }
+  tags = var.tags
+}
+
+resource "azurerm_subnet_network_security_group_association" "public_assoc" {
+  count                     = var.az_count
+  subnet_id                 = azurerm_subnet.public[count.index].id
+  network_security_group_id = azurerm_network_security_group.public_nsg.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "private_app_assoc" {
+  subnet_id                 = azurerm_subnet.private_app.id
+  network_security_group_id = azurerm_network_security_group.private_app_nsg.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "db_assoc" {
+  subnet_id                 = azurerm_subnet.db.id
+  network_security_group_id = azurerm_network_security_group.db_nsg.id
+}
+
+# DNS links (now works with shared_rg_name passed)
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
+  name                  = "link-${var.environment}-acr"
+  resource_group_name   = var.shared_rg_name
+  private_dns_zone_name = "privatelink.azurecr.io"
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
+  name                  = "link-${var.environment}-cosmos-mongo"
+  resource_group_name   = var.shared_rg_name
+  private_dns_zone_name = "privatelink.mongo.cosmos.azure.com"
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+}
+
+resource "azurerm_cosmosdb_account" "cosmos" {
+  name                          = "cosmos-ja-mma-${var.environment}"
+  location                      = var.location
+  resource_group_name           = azurerm_resource_group.env.name
+  offer_type                    = "Standard"
+  kind                          = "MongoDB"
+  public_network_access_enabled = false
+
+  consistency_policy {
+    consistency_level = "Session"
+  }
+
+  geo_location {
+    location          = var.location
+    failover_priority = 0
+    zone_redundant    = var.cosmos_zone_redundant
+  }
+
+  backup {
+    type                = "Periodic"
+    interval_in_minutes = 240
+    retention_in_hours  = var.backup_retention_hours
+    storage_redundancy  = "Geo"
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_container_app_environment" "cae" {
+  name                           = "cae-ja-mma-${var.environment}"
+  location                       = var.location
+  resource_group_name            = azurerm_resource_group.env.name
+  infrastructure_subnet_id       = azurerm_subnet.private_app.id
+  internal_load_balancer_enabled = (var.ingress_type == "front_door")
+  log_analytics_workspace_id     = var.log_analytics_id
+  tags                           = var.tags
+}
+
+resource "azurerm_container_app" "frontend" {
+  name                         = "frontend-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.cae.id
+  resource_group_name          = azurerm_resource_group.env.name
+  revision_mode                = "Single"
+
+  template {
+    min_replicas = var.replica_min
+    max_replicas = var.replica_max
+
+    container {
+      name   = "frontend"
+      image  = "${var.acr_login_server}/ja-mma-frontend:latest"
+      cpu    = "0.5"
+      memory = "1Gi"
+    }
+  }
+
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+  }
+
+  tags = var.tags
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  registry {
+    server   = var.acr_login_server
+    identity = "System"
+  }
+}
+
+resource "azurerm_container_app" "backend" {
+  name                         = "backend-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.cae.id
+  resource_group_name          = azurerm_resource_group.env.name
+  revision_mode                = "Single"
+
+  template {
+    min_replicas = var.replica_min
+    max_replicas = var.replica_max
+
+    container {
+      name   = "backend"
+      image  = "${var.acr_login_server}/ja-mma-backend:latest"
+      cpu    = "0.75"
+      memory = "1.5Gi"
+    }
+  }
+
+  ingress {
+    external_enabled = false
+    target_port      = 8080
+  }
+
+  tags = var.tags
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  registry {
+    server   = var.acr_login_server
+    identity = "System"
+  }
+}
+
+resource "azurerm_application_gateway" "appgw" {
+  count = var.ingress_type == "app_gateway" ? 1 : 0
+
+  name                = "appgw-ja-mma-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+
+  sku {
+    name = var.appgw_sku
+    tier = "Standard_v2"
+  }
+
+  autoscale_configuration {
