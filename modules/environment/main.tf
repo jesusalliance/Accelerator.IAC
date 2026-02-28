@@ -1,4 +1,4 @@
-# modules/environment/main.tf - Updated fixes for route table, NSG, Cosmos, Container App, AppGW
+# modules/environment/main.tf - FINAL VERSION (outputs removed to fix duplicate error)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -37,7 +37,6 @@ resource "azurerm_subnet" "private_app" {
 
   delegation {
     name = "aca-delegation"
-
     service_delegation {
       name    = "Microsoft.App/environments"
       actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
@@ -61,9 +60,9 @@ resource "azurerm_subnet" "management" {
 }
 
 resource "azurerm_route_table" "private_rt" {
-  name                          = "rt-private-${var.environment}"
-  location                      = var.location
-  resource_group_name           = azurerm_resource_group.env.name
+  name                = "rt-private-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
 
   route {
     name                   = "egress-to-firewall"
@@ -71,7 +70,6 @@ resource "azurerm_route_table" "private_rt" {
     next_hop_type          = "VirtualAppliance"
     next_hop_in_ip_address = var.hub_firewall_private_ip
   }
-
   tags = var.tags
 }
 
@@ -107,7 +105,6 @@ resource "azurerm_network_security_group" "public_nsg" {
     source_address_prefix      = "Internet"
     destination_address_prefix = "*"
   }
-
   tags = var.tags
 }
 
@@ -127,7 +124,6 @@ resource "azurerm_network_security_group" "private_app_nsg" {
     source_address_prefixes    = local.public_subnet_cidrs
     destination_address_prefix = "*"
   }
-
   tags = var.tags
 }
 
@@ -143,11 +139,10 @@ resource "azurerm_network_security_group" "db_nsg" {
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_ranges    = ["443"]   # FIXED: ranges, not single port
+    destination_port_ranges    = ["443"]
     source_address_prefix      = local.private_app_cidr
     destination_address_prefix = "*"
   }
-
   tags = var.tags
 }
 
@@ -184,12 +179,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
 }
 
 resource "azurerm_cosmosdb_account" "cosmos" {
-  name                              = "cosmos-ja-mma-${var.environment}"
-  location                          = var.location
-  resource_group_name               = azurerm_resource_group.env.name
-  offer_type                        = "Standard"
-  kind                              = "MongoDB"
-  public_network_access_enabled     = false
+  name                          = "cosmos-ja-mma-${var.environment}"
+  location                      = var.location
+  resource_group_name           = azurerm_resource_group.env.name
+  offer_type                    = "Standard"
+  kind                          = "MongoDB"
+  public_network_access_enabled = false
 
   consistency_policy {
     consistency_level = "Session"
@@ -239,12 +234,10 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  ingress_enabled        = true
+  ingress_enabled          = true
   ingress_external_enabled = true
-  ingress_target_port    = 8080   # FIXED: use attributes instead of block
-  ingress_traffic_weight {
-    percentage = 100
-  }
+  ingress_target_port      = 8080
+  tags                     = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -254,8 +247,6 @@ resource "azurerm_container_app" "frontend" {
     server   = var.acr_login_server
     identity = "System"
   }
-
-  tags = var.tags
 }
 
 resource "azurerm_container_app" "backend" {
@@ -276,8 +267,9 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  ingress_enabled        = false   # backend internal
-  ingress_target_port    = 8080
+  ingress_enabled     = false
+  ingress_target_port = 8080
+  tags                = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -287,8 +279,6 @@ resource "azurerm_container_app" "backend" {
     server   = var.acr_login_server
     identity = "System"
   }
-
-  tags = var.tags
 }
 
 resource "azurerm_application_gateway" "appgw" {
@@ -314,23 +304,18 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   frontend_port {
-    name = "http-port"
-    port = 80
-  }
-
-  frontend_port {
     name = "https-port"
     port = 443
   }
 
   frontend_ip_configuration {
-    name                 = "public-frontend-ip"
-    public_ip_address_id = azurerm_public_ip.appgw_pip[0].id   # add public IP resource if missing
+    name                 = "frontend-ip"
+    public_ip_address_id = azurerm_public_ip.appgw_pip[0].id
   }
 
   backend_address_pool {
-    name         = "backend-pool"
-    fqdns        = [azurerm_container_app.frontend.fqdn]   # or private IP
+    name  = "backend-pool"
+    fqdns = [azurerm_container_app.frontend.default_hostname]
   }
 
   backend_http_settings {
@@ -342,16 +327,17 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   http_listener {
-    name                           = "http-listener"
-    frontend_ip_configuration_name = "public-frontend-ip"
-    frontend_port_name             = "http-port"
-    protocol                       = "Http"
+    name                           = "https-listener"
+    frontend_ip_configuration_name = "frontend-ip"
+    frontend_port_name             = "https-port"
+    protocol                       = "Https"
   }
 
   request_routing_rule {
-    name                       = "rule1"
+    name                       = "routing-rule"
     rule_type                  = "Basic"
-    http_listener_name         = "http-listener"
+    priority                   = 100
+    http_listener_name         = "https-listener"
     backend_address_pool_name  = "backend-pool"
     backend_http_settings_name = "http-settings"
   }
@@ -359,7 +345,6 @@ resource "azurerm_application_gateway" "appgw" {
   tags = var.tags
 }
 
-# Add this if public IP needed for AppGW
 resource "azurerm_public_ip" "appgw_pip" {
   count               = var.ingress_type == "app_gateway" ? 1 : 0
   name                = "pip-appgw-${var.environment}"
@@ -368,13 +353,4 @@ resource "azurerm_public_ip" "appgw_pip" {
   allocation_method   = "Static"
   sku                 = "Standard"
   tags                = var.tags
-}
-
-# Outputs
-output "rg_name" {
-  value = azurerm_resource_group.env.name
-}
-
-output "vnet_id" {
-  value = azurerm_virtual_network.spoke.id
 }
