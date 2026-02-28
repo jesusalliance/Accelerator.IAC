@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance
+# main.tf (root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
 
 terraform {
   required_providers {
@@ -37,7 +37,6 @@ module "dev" {
   replica_max             = 3
   zone_redundancy_enabled = false
   ingress_type            = "app_gateway"
-  cosmos_zone_redundant   = false
   backup_retention_hours  = 168
   appgw_sku               = "Standard_v2"
   appgw_capacity          = 2
@@ -77,7 +76,6 @@ module "uat" {
   replica_max             = 5
   zone_redundancy_enabled = false
   ingress_type            = "front_door"
-  cosmos_zone_redundant   = false
   backup_retention_hours  = 168
   appgw_sku               = "Standard_v2"
   appgw_capacity          = 2
@@ -117,7 +115,6 @@ module "prod" {
   replica_max             = 20
   zone_redundancy_enabled = true
   ingress_type            = "front_door"
-  cosmos_zone_redundant   = true
   backup_retention_hours  = 720
   appgw_sku               = "WAF_v2"
   appgw_capacity          = 3
