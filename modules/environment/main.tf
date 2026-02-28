@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (brace syntax fixed + PDF subnet exact + modern ingress blocks)
+# modules/environment/main.tf - FIXED: added required traffic_weight in ingress blocks
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -242,6 +242,11 @@ resource "azurerm_container_app" "frontend" {
   ingress {
     external_enabled = true
     target_port      = 8080
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
   }
 
   tags = var.tags
@@ -277,6 +282,11 @@ resource "azurerm_container_app" "backend" {
   ingress {
     external_enabled = false
     target_port      = 8080
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
   }
 
   tags = var.tags
