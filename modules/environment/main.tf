@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FIXED: added required traffic_weight in ingress blocks
+# modules/environment/main.tf - FIXED: replaced invalid default_hostname with latest_revision_fqdn
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -335,7 +335,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.default_hostname]
+    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]
   }
 
   backend_http_settings {
