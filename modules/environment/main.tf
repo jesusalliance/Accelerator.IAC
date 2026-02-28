@@ -1,5 +1,4 @@
-# modules/environment/main.tf – FIXED: added latest_revision = true in frontend ingress traffic_weight
-# This satisfies the provider validation requirement for ingress in Single revision mode
+# modules/environment/main.tf - FIXED: Correct subnet CIDR math + DNS links moved to shared + Cosmos private endpoint added
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -16,10 +15,11 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 11, i)]
-  private_app_cidr    = cidrsubnet(var.vnet_cidr, 11, var.az_count)
-  db_cidr             = cidrsubnet(var.vnet_cidr, 11, var.az_count + 1)
-  mgmt_cidr           = cidrsubnet(var.vnet_cidr, 11, var.az_count + 2)
+  # FIXED: Correct newbits for /24 subnets inside /21 VNet (24 - 21 = 3)
+  public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 3, i)]
+  private_app_cidr    = cidrsubnet(var.vnet_cidr, 3, var.az_count)
+  db_cidr             = cidrsubnet(var.vnet_cidr, 3, var.az_count + 1)
+  mgmt_cidr           = cidrsubnet(var.vnet_cidr, 3, var.az_count + 2)
 }
 
 resource "azurerm_subnet" "public" {
@@ -38,7 +38,6 @@ resource "azurerm_subnet" "private_app" {
 
   delegation {
     name = "aca-delegation"
-
     service_delegation {
       name    = "Microsoft.App/environments"
       actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
@@ -72,7 +71,6 @@ resource "azurerm_route_table" "private_rt" {
     next_hop_type          = "VirtualAppliance"
     next_hop_in_ip_address = var.hub_firewall_private_ip
   }
-
   tags = var.tags
 }
 
@@ -108,7 +106,6 @@ resource "azurerm_network_security_group" "public_nsg" {
     source_address_prefix      = "Internet"
     destination_address_prefix = "*"
   }
-
   tags = var.tags
 }
 
@@ -128,7 +125,6 @@ resource "azurerm_network_security_group" "private_app_nsg" {
     source_address_prefixes    = local.public_subnet_cidrs
     destination_address_prefix = "*"
   }
-
   tags = var.tags
 }
 
@@ -148,7 +144,6 @@ resource "azurerm_network_security_group" "db_nsg" {
     source_address_prefix      = local.private_app_cidr
     destination_address_prefix = "*"
   }
-
   tags = var.tags
 }
 
@@ -168,29 +163,35 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
   network_security_group_id = azurerm_network_security_group.db_nsg.id
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
-  name                  = "link-${var.environment}-acr"
-  resource_group_name   = azurerm_resource_group.env.name
-  private_dns_zone_name = "privatelink.azurecr.io"
-  virtual_network_id    = azurerm_virtual_network.spoke.id
-  registration_enabled  = false
-}
+# REMOVED: DNS links (they now live in shared module)
 
-resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
-  name                  = "link-${var.environment}-cosmos-mongo"
-  resource_group_name   = azurerm_resource_group.env.name
-  private_dns_zone_name = "privatelink.mongo.cosmos.azure.com"
-  virtual_network_id    = azurerm_virtual_network.spoke.id
-  registration_enabled  = false
+# Cosmos DB Private Endpoint (required by design - private-by-default)
+resource "azurerm_private_endpoint" "cosmos" {
+  name                = "pe-cosmos-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+  subnet_id           = azurerm_subnet.db.id
+
+  private_service_connection {
+    name                           = "cosmos-connection"
+    private_connection_resource_id = azurerm_cosmosdb_account.cosmos.id
+    is_manual_connection           = false
+    subresource_names              = ["MongoDB"]
+  }
+
+  private_dns_zone_group {
+    name                 = "cosmos-dns-group"
+    private_dns_zone_ids = [var.shared_cosmos_dns_zone_id]
+  }
 }
 
 resource "azurerm_cosmosdb_account" "cosmos" {
-  name                              = "cosmos-ja-mma-${var.environment}"
-  location                          = var.location
-  resource_group_name               = azurerm_resource_group.env.name
-  offer_type                        = "Standard"
-  kind                              = "MongoDB"
-  public_network_access_enabled     = false
+  name                          = "cosmos-ja-mma-${var.environment}"
+  location                      = var.location
+  resource_group_name           = azurerm_resource_group.env.name
+  offer_type                    = "Standard"
+  kind                          = "MongoDB"
+  public_network_access_enabled = false
 
   consistency_policy {
     consistency_level = "Session"
@@ -240,14 +241,10 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  ingress {
-    external_enabled = true
-    target_port      = 8080
-    traffic_weight {
-      percentage      = 100
-      latest_revision = true  # ← FIXED HERE: required for Single revision mode
-    }
-  }
+  ingress_enabled          = true
+  ingress_external_enabled = true
+  ingress_target_port      = 8080
+  tags                     = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -257,8 +254,6 @@ resource "azurerm_container_app" "frontend" {
     server   = var.acr_login_server
     identity = "System"
   }
-
-  tags = var.tags
 }
 
 resource "azurerm_container_app" "backend" {
@@ -279,6 +274,10 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
+  ingress_enabled     = false
+  ingress_target_port = 8080
+  tags                = var.tags
+
   identity {
     type = "SystemAssigned"
   }
@@ -287,8 +286,6 @@ resource "azurerm_container_app" "backend" {
     server   = var.acr_login_server
     identity = "System"
   }
-
-  tags = var.tags
 }
 
 resource "azurerm_application_gateway" "appgw" {
@@ -325,7 +322,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]
+    fqdns = [azurerm_container_app.frontend.default_hostname]
   }
 
   backend_http_settings {
