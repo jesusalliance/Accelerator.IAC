@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (syntax fixed + ingress block corrected for azurerm ~>4.0 + PDF networking exact)
+# modules/environment/main.tf - FINAL VERSION (brace syntax fixed + PDF subnet exact + modern ingress blocks)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -15,9 +15,7 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  # FIXED: subnet allocation EXACTLY matches PDF v3.0 tables (section 4.0)
-  # DEV/UAT (az_count=1): public .0/24, private-app .1/24, DB .2/24
-  # PROD (az_count=2): Public AZ1 .0/24, Public AZ2 .4/24 (PDF example), private-app .1/24, DB .2/24, mgmt .3/24
+  # EXACT PDF v3.0 match (section 4.0) - PROD uses .4/24 for Public AZ2
   public_subnet_cidrs = var.environment == "prod" ? [
     cidrsubnet(var.vnet_cidr, 3, 0), # AZ1
     cidrsubnet(var.vnet_cidr, 3, 4)  # AZ2 per design PDF
@@ -168,7 +166,7 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
   network_security_group_id = azurerm_network_security_group.db_nsg.id
 }
 
-# DNS links (now works with shared_rg_name passed)
+# DNS links (in SHARED RG)
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   name                  = "link-${var.environment}-acr"
   resource_group_name   = var.shared_rg_name
@@ -306,3 +304,70 @@ resource "azurerm_application_gateway" "appgw" {
   }
 
   autoscale_configuration {
+    min_capacity = var.appgw_capacity
+    max_capacity = var.appgw_max_capacity
+  }
+
+  gateway_ip_configuration {
+    name      = "gw-ip-config"
+    subnet_id = azurerm_subnet.public[0].id
+  }
+
+  frontend_port {
+    name = "https-port"
+    port = 443
+  }
+
+  frontend_ip_configuration {
+    name                 = "frontend-ip"
+    public_ip_address_id = azurerm_public_ip.appgw_pip[0].id
+  }
+
+  backend_address_pool {
+    name  = "backend-pool"
+    fqdns = [azurerm_container_app.frontend.default_hostname]
+  }
+
+  backend_http_settings {
+    name                  = "http-settings"
+    cookie_based_affinity = "Disabled"
+    port                  = 8080
+    protocol              = "Http"
+    request_timeout       = 60
+  }
+
+  http_listener {
+    name                           = "https-listener"
+    frontend_ip_configuration_name = "frontend-ip"
+    frontend_port_name             = "https-port"
+    protocol                       = "Https"
+  }
+
+  request_routing_rule {
+    name                       = "routing-rule"
+    rule_type                  = "Basic"
+    priority                   = 100
+    http_listener_name         = "https-listener"
+    backend_address_pool_name  = "backend-pool"
+    backend_http_settings_name = "http-settings"
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_public_ip" "appgw_pip" {
+  count               = var.ingress_type == "app_gateway" ? 1 : 0
+  name                = "pip-appgw-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = var.tags
+}
+
+# GitHub CI/CD role for deploying to this environment (design 13.0)
+resource "azurerm_role_assignment" "github_container_apps" {
+  scope                = azurerm_resource_group.env.id
+  role_definition_name = "Contributor"
+  principal_id         = var.github_ci_principal_id
+}

@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - Updated to match shared outputs + FULL NETWORKING FIX
+# main.tf (root) - Jesus Alliance MMA Portal - Clean variable passing only
 
 terraform {
   required_providers {
@@ -124,7 +124,7 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# Hub-Spoke bidirectional peering (PDF 4.0 + 9.0) - required for private connectivity + UDR
+# Hub-Spoke bidirectional peering (PDF 4.0 + 9.0)
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
   name                      = "peer-dev-to-hub"
   resource_group_name       = module.dev.rg_name

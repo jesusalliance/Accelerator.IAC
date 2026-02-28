@@ -1,4 +1,4 @@
-# modules/shared/main.tf - FINAL CLEAN VERSION (spoke DNS links removed)
+# modules/shared/main.tf - FINAL CLEAN VERSION (duplicate outputs removed - keep only in outputs.tf)
 
 data "azurerm_client_config" "current" {}
 
