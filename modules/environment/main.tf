@@ -1,6 +1,6 @@
-# modules/environment/main.tf – FINAL VERSION
-# Backend ingress block removed (internal backend does not need public ingress)
-# Frontend ingress block is correct and complete
+# modules/environment/main.tf – FIXED: All braces closed properly
+# container {} blocks now have matching closing braces
+# ingress {} blocks are complete with required target_port and traffic_weight
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -236,4 +236,130 @@ resource "azurerm_container_app" "frontend" {
       name   = "frontend"
       image  = "${var.acr_login_server}/ja-mma-frontend:latest"
       cpu    = "0.5"
-     
+      memory = "1Gi"
+    }
+  }
+
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    traffic_weight {
+      percentage = 100
+    }
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  registry {
+    server   = var.acr_login_server
+    identity = "System"
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_container_app" "backend" {
+  name                         = "backend-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.cae.id
+  resource_group_name          = azurerm_resource_group.env.name
+  revision_mode                = "Single"
+
+  template {
+    min_replicas = var.replica_min
+    max_replicas = var.replica_max
+
+    container {
+      name   = "backend"
+      image  = "${var.acr_login_server}/ja-mma-backend:latest"
+      cpu    = "0.75"
+      memory = "1.5Gi"
+    }
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  registry {
+    server   = var.acr_login_server
+    identity = "System"
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_application_gateway" "appgw" {
+  count = var.ingress_type == "app_gateway" ? 1 : 0
+
+  name                = "appgw-ja-mma-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+
+  sku {
+    name     = var.appgw_sku
+    tier     = "Standard_v2"
+  }
+
+  autoscale_configuration {
+    min_capacity = var.appgw_capacity
+    max_capacity = var.appgw_max_capacity
+  }
+
+  gateway_ip_configuration {
+    name      = "gw-ip-config"
+    subnet_id = azurerm_subnet.public[0].id
+  }
+
+  frontend_port {
+    name = "https-port"
+    port = 443
+  }
+
+  frontend_ip_configuration {
+    name                 = "frontend-ip"
+    public_ip_address_id = azurerm_public_ip.appgw_pip[0].id
+  }
+
+  backend_address_pool {
+    name  = "backend-pool"
+    fqdns = [azurerm_container_app.frontend.default_hostname]
+  }
+
+  backend_http_settings {
+    name                  = "http-settings"
+    cookie_based_affinity = "Disabled"
+    port                  = 8080
+    protocol              = "Http"
+    request_timeout       = 60
+  }
+
+  http_listener {
+    name                           = "https-listener"
+    frontend_ip_configuration_name = "frontend-ip"
+    frontend_port_name             = "https-port"
+    protocol                       = "Https"
+  }
+
+  request_routing_rule {
+    name                       = "routing-rule"
+    rule_type                  = "Basic"
+    priority                   = 100
+    http_listener_name         = "https-listener"
+    backend_address_pool_name  = "backend-pool"
+    backend_http_settings_name = "http-settings"
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_public_ip" "appgw_pip" {
+  count               = var.ingress_type == "app_gateway" ? 1 : 0
+  name                = "pip-appgw-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = var.tags
+}
