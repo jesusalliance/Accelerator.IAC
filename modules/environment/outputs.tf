@@ -1,4 +1,4 @@
-# modules/environment/outputs.tf - All outputs here (no duplicates in main.tf)
+# modules/environment/outputs.tf – FIXED frontend_fqdn attribute
 
 output "rg_name" {
   description = "Environment resource group name"
@@ -16,8 +16,8 @@ output "container_app_environment_id" {
 }
 
 output "frontend_fqdn" {
-  description = "Frontend Container App default FQDN (for Front Door origin if public)"
-  value       = azurerm_container_app.frontend.configuration[0].ingress[0].fqdn
+  description = "Frontend Container App default FQDN (for Front Door origin)"
+  value       = azurerm_container_app.frontend.default_hostname
 }
 
 output "private_app_subnet_id" {
