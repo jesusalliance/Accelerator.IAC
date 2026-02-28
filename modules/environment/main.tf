@@ -1,6 +1,6 @@
-# modules/environment/main.tf – FIXED: removed incomplete backend ingress block
-# Fixed AppGW backend pool to use correct exported FQDN attribute (latest_revision_fqdn)
-# All braces match; syntax is valid
+# modules/environment/main.tf – FIXED: 
+# - Removed incomplete ingress block from backend (internal → omit ingress)
+# - Changed AppGW fqdns to use correct exported attribute: latest_revision_fqdn
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -324,7 +324,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]  # FIXED: correct exported attribute
+    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]
   }
 
   backend_http_settings {
