@@ -60,7 +60,6 @@ module "dev" {
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
-  shared_rg_name = "rg-ja-shared"
 
   depends_on = [module.shared]
 }
@@ -100,7 +99,6 @@ module "uat" {
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
-  shared_rg_name = "rg-ja-shared"
 
   depends_on = [module.shared]
 }
@@ -140,14 +138,12 @@ module "prod" {
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
-  shared_rg_name = "rg-ja-shared"
 
   depends_on = [module.shared]
 }
 
 # Bidirectional Hub-Spoke VNet Peering (PDF sections 4.0 & 9.0 - REQUIRED)
 # Place this AFTER all module calls (dev, uat, prod, shared) so outputs are available
-
 
 resource "azurerm_virtual_network_peering" "hub_to_dev" {
   name                         = "peer-hub-to-dev"
