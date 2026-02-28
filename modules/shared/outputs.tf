@@ -43,3 +43,8 @@ output "acr_id" {
 output "frontdoor_profile_id" {
   value = azurerm_cdn_frontdoor_profile.ja.id
 }
+
+# NEW: required for spoke DNS links + peering
+output "rg_name" {
+  value = azurerm_resource_group.shared.name
+}
