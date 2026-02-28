@@ -1,4 +1,4 @@
-# modules/environment/main.tf – FIXED: added latest_revision = true in frontend traffic_weight
+# modules/environment/main.tf – FIXED: added latest_revision = true in frontend ingress traffic_weight
 # This satisfies the provider validation requirement for ingress in Single revision mode
 
 resource "azurerm_resource_group" "env" {
@@ -38,6 +38,7 @@ resource "azurerm_subnet" "private_app" {
 
   delegation {
     name = "aca-delegation"
+
     service_delegation {
       name    = "Microsoft.App/environments"
       actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
@@ -244,7 +245,7 @@ resource "azurerm_container_app" "frontend" {
     target_port      = 8080
     traffic_weight {
       percentage      = 100
-      latest_revision = true   # FIXED: required for Single mode to route to latest revision
+      latest_revision = true  # ← FIXED HERE: required for Single revision mode
     }
   }
 
