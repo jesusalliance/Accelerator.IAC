@@ -5,7 +5,7 @@ variable "location" {
 }
 
 variable "common_tags" {
-  description = "Base tags applied to all resources"
+  description = "Base tags"
   type        = map(string)
   default = {
     project     = "ja-mma-portal"
