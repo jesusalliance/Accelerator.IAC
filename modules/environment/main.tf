@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role)
+# modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + variable name fix)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -201,7 +201,7 @@ resource "azurerm_cosmosdb_account" "cosmos" {
   geo_location {
     location          = var.location
     failover_priority = 0
-    zone_redundant    = var.cosmos_zone_redundant
+    zone_redundant    = var.zone_redundancy_enabled   # FIXED - now matches root variable name
   }
 
   backup {
