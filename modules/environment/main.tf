@@ -1,4 +1,5 @@
-# modules/environment/main.tf - FINAL FIXED VERSION (correct /24 CIDR + data source DNS links + Cosmos private endpoint)
+# modules/environment/main.tf - FIXED: Added required traffic_weight block in ingress for azurerm_container_app
+# Aligns with provider schema requirement (at least one traffic_weight even for Single revision_mode)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -15,7 +16,7 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  # CORRECTED: /24 subnets inside /21 VNet
+  # Correct /24 subnets inside /21 VNet
   public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 3, i)]
   private_app_cidr    = cidrsubnet(var.vnet_cidr, 3, var.az_count)
   db_cidr             = cidrsubnet(var.vnet_cidr, 3, var.az_count + 1)
@@ -252,7 +253,7 @@ resource "azurerm_container_app_environment" "cae" {
   tags                           = var.tags
 }
 
-# Frontend
+# Frontend Container App - FIXED ingress with required traffic_weight
 resource "azurerm_container_app" "frontend" {
   name                         = "frontend-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.cae.id
@@ -275,6 +276,11 @@ resource "azurerm_container_app" "frontend" {
     external_enabled = true
     target_port      = 8080
     transport        = "http"
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
   }
 
   tags = var.tags
@@ -289,7 +295,7 @@ resource "azurerm_container_app" "frontend" {
   }
 }
 
-# Backend
+# Backend Container App - Added ingress block with traffic_weight (consistent; adjust if backend should be internal-only)
 resource "azurerm_container_app" "backend" {
   name                         = "backend-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.cae.id
@@ -308,6 +314,17 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
+  ingress {
+    external_enabled = false  # backend typically internal; change to true if needed
+    target_port      = 8080
+    transport        = "http"
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
+  }
+
   tags = var.tags
 
   identity {
@@ -320,7 +337,7 @@ resource "azurerm_container_app" "backend" {
   }
 }
 
-# Application Gateway (DEV/UAT)
+# Application Gateway (for DEV/UAT ingress)
 resource "azurerm_application_gateway" "appgw" {
   count = var.ingress_type == "app_gateway" ? 1 : 0
 
