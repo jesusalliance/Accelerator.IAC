@@ -143,6 +143,9 @@ module "prod" {
 }
 
 # Bidirectional Hub-Spoke VNet Peering (PDF sections 4.0 & 9.0 - REQUIRED)
+# Place this AFTER all module calls (dev, uat, prod, shared) so outputs are available
+
+
 resource "azurerm_virtual_network_peering" "hub_to_dev" {
   name                         = "peer-hub-to-dev"
   resource_group_name          = "rg-ja-shared"
@@ -150,6 +153,10 @@ resource "azurerm_virtual_network_peering" "hub_to_dev" {
   remote_virtual_network_id    = module.dev.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false          # ← ADD this line
+  use_remote_gateways          = false          # ← ADD this line
+
+  depends_on = [module.dev]                      # ← ADD this (optional but recommended)
 }
 
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
@@ -159,6 +166,10 @@ resource "azurerm_virtual_network_peering" "dev_to_hub" {
   remote_virtual_network_id    = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false          # ← ADD
+  use_remote_gateways          = false          # ← ADD
+
+  depends_on = [module.dev, module.shared]       # ← ADD
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_uat" {
@@ -168,6 +179,10 @@ resource "azurerm_virtual_network_peering" "hub_to_uat" {
   remote_virtual_network_id    = module.uat.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+
+  depends_on = [module.uat]
 }
 
 resource "azurerm_virtual_network_peering" "uat_to_hub" {
@@ -177,6 +192,10 @@ resource "azurerm_virtual_network_peering" "uat_to_hub" {
   remote_virtual_network_id    = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+
+  depends_on = [module.uat, module.shared]
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_prod" {
@@ -186,6 +205,10 @@ resource "azurerm_virtual_network_peering" "hub_to_prod" {
   remote_virtual_network_id    = module.prod.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+
+  depends_on = [module.prod]
 }
 
 resource "azurerm_virtual_network_peering" "prod_to_hub" {
@@ -195,7 +218,12 @@ resource "azurerm_virtual_network_peering" "prod_to_hub" {
   remote_virtual_network_id    = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+
+  depends_on = [module.prod, module.shared]
 }
+
 
 # Root outputs
 output "shared_acr_login_server" { value = module.shared.acr_login_server }
