@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (ingress now uses correct nested block for azurerm 4.x)
+# modules/environment/main.tf - FINAL VERSION (added required traffic_weight blocks inside ingress for azurerm 4.x)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -235,11 +235,16 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  # CORRECTED: ingress must be a nested block in azurerm 4.x
+  # Ingress configuration with required traffic_weight for provider validation
   ingress {
     external_enabled = true
     target_port      = 8080
     transport        = "http"
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
   }
 
   tags = var.tags
@@ -272,11 +277,16 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  # CORRECTED: internal backend (called from frontend via VNet)
+  # Internal backend ingress (called via VNet from frontend) - still needs traffic_weight block
   ingress {
     external_enabled = false
     target_port      = 8080
     transport        = "http"
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
   }
 
   tags = var.tags
@@ -365,7 +375,7 @@ resource "azurerm_public_ip" "appgw_pip" {
   tags                = var.tags
 }
 
-# GitHub CI/CD role for deploying to this environment (design 13.0)
+# GitHub CI/CD role for deploying to this environment (design section 13.0)
 resource "azurerm_role_assignment" "github_container_apps" {
   scope                = azurerm_resource_group.env.id
   role_definition_name = "Contributor"
