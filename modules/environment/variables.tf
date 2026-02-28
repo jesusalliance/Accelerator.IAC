@@ -1,12 +1,12 @@
-# modules/environment/variables.tf
+# modules/environment/variables.tf - CLEAN VERSION (only variables actually used by the module)
 
 variable "environment" {
-  description = "Environment name (dev, uat, prod)"
+  description = "Environment name (dev/uat/prod)"
   type        = string
 }
 
 variable "rg_name" {
-  description = "Resource Group name"
+  description = "Resource group name for this environment"
   type        = string
 }
 
@@ -16,100 +16,91 @@ variable "location" {
 }
 
 variable "vnet_cidr" {
-  description = "Spoke VNet CIDR (e.g. 10.10.0.0/21)"
+  description = "VNet address space (e.g. 10.10.0.0/21)"
   type        = string
 }
 
 variable "az_count" {
-  description = "Number of availability zones (1 for DEV/UAT, 2+ for PROD)"
+  description = "Number of availability zones (1 for DEV/UAT, 2 for PROD)"
   type        = number
-  default     = 1
 }
 
 variable "replica_min" {
-  description = "Minimum replicas for Container Apps"
+  description = "Minimum Container App replicas"
   type        = number
-  default     = 1
 }
 
 variable "replica_max" {
-  description = "Maximum replicas for Container Apps"
+  description = "Maximum Container App replicas"
   type        = number
-  default     = 10
 }
 
 variable "zone_redundancy_enabled" {
-  description = "Enable zone redundancy where supported"
+  description = "Enable zone redundancy (true for PROD)"
   type        = bool
-  default     = false
 }
 
 variable "ingress_type" {
-  description = "Ingress method: app_gateway, front_door, or direct (Container Apps public ingress)"
+  description = "app_gateway or front_door"
   type        = string
-  default     = "app_gateway"
-
   validation {
-    condition     = contains(["app_gateway", "front_door", "direct"], var.ingress_type)
-    error_message = "ingress_type must be one of: app_gateway, front_door, direct."
+    condition     = contains(["app_gateway", "front_door"], var.ingress_type)
+    error_message = "ingress_type must be 'app_gateway' or 'front_door'."
   }
 }
 
 variable "cosmos_zone_redundant" {
-  description = "Enable zone-redundant Cosmos DB (PROD only)"
+  description = "Enable zone redundancy for Cosmos DB"
   type        = bool
-  default     = false
 }
 
 variable "backup_retention_hours" {
-  description = "Cosmos DB periodic backup retention in hours"
+  description = "Cosmos DB backup retention in hours"
   type        = number
-  default     = 168
 }
 
 variable "appgw_sku" {
   description = "Application Gateway SKU (Standard_v2 or WAF_v2)"
   type        = string
-  default     = "Standard_v2"
 }
 
 variable "appgw_capacity" {
-  description = "Minimum capacity for App Gateway"
+  description = "Minimum Application Gateway capacity"
   type        = number
-  default     = 2
 }
 
 variable "appgw_max_capacity" {
-  description = "Maximum autoscale capacity for App Gateway"
+  description = "Maximum Application Gateway capacity"
   type        = number
-  default     = 10
 }
 
-variable "frontdoor_id" {
-  description = "Shared Azure Front Door profile ID (for UAT/PROD routing)"
+variable "hub_firewall_private_ip" {
+  description = "Private IP of the shared Azure Firewall (for UDR)"
   type        = string
-  default     = null
 }
 
-# Passed from shared module
-variable "hub_vnet_id" { type = string }
-variable "hub_firewall_private_ip" { type = string }
-variable "hub_firewall_id" { type = string }
-variable "acr_login_server" { type = string }
-variable "log_analytics_id" { type = string }
-variable "shared_cosmos_dns_zone_id" { type = string }
-variable "shared_acr_dns_zone_id" { type = string }
-variable "github_ci_principal_id" { type = string }
-variable "key_vault_id" { type = string }
-variable "acr_id" { type = string }
+variable "acr_login_server" {
+  description = "ACR login server name"
+  type        = string
+}
+
+variable "log_analytics_id" {
+  description = "Log Analytics Workspace ID"
+  type        = string
+}
+
+variable "github_ci_principal_id" {
+  description = "GitHub CI managed identity principal ID"
+  type        = string
+}
 
 variable "shared_rg_name" {
-  description = "Shared resource group name (for Private DNS zone links)"
+  description = "Name of the shared resource group (for DNS links)"
   type        = string
 }
 
 variable "tags" {
-  description = "Tags to apply to resources"
+  description = "Resource tags"
   type        = map(string)
   default     = {}
 }
