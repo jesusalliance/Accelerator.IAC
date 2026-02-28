@@ -11,7 +11,7 @@ provider "azurerm" {
   features {}
 }
 
-# SHARED HUB – only supported arguments (fixes unsupported argument errors)
+# SHARED HUB
 module "shared" {
   source = "./modules/shared"
 
@@ -43,8 +43,8 @@ module "dev" {
   hub_firewall_id            = module.shared.firewall_id
   acr_login_server           = module.shared.acr_login_server
   log_analytics_id           = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id  = module.shared.cosmos_dns_zone_id
-  shared_acr_dns_zone_id     = module.shared.acr_dns_zone_id
+  shared_cosmos_dns_zone_id  = module.shared.cosmos_private_dns_zone_id
+  shared_acr_dns_zone_id     = module.shared.acr_private_dns_zone_id
   github_ci_principal_id     = module.shared.github_ci_identity_principal_id
   key_vault_id               = module.shared.key_vault_id
   acr_id                     = module.shared.acr_id
@@ -78,8 +78,8 @@ module "uat" {
   hub_firewall_id            = module.shared.firewall_id
   acr_login_server           = module.shared.acr_login_server
   log_analytics_id           = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id  = module.shared.cosmos_dns_zone_id
-  shared_acr_dns_zone_id     = module.shared.acr_dns_zone_id
+  shared_cosmos_dns_zone_id  = module.shared.cosmos_private_dns_zone_id
+  shared_acr_dns_zone_id     = module.shared.acr_private_dns_zone_id
   github_ci_principal_id     = module.shared.github_ci_identity_principal_id
   key_vault_id               = module.shared.key_vault_id
   acr_id                     = module.shared.acr_id
@@ -113,8 +113,8 @@ module "prod" {
   hub_firewall_id            = module.shared.firewall_id
   acr_login_server           = module.shared.acr_login_server
   log_analytics_id           = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id  = module.shared.cosmos_dns_zone_id
-  shared_acr_dns_zone_id     = module.shared.acr_dns_zone_id
+  shared_cosmos_dns_zone_id  = module.shared.cosmos_private_dns_zone_id
+  shared_acr_dns_zone_id     = module.shared.acr_private_dns_zone_id
   github_ci_principal_id     = module.shared.github_ci_identity_principal_id
   key_vault_id               = module.shared.key_vault_id
   acr_id                     = module.shared.acr_id
