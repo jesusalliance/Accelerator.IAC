@@ -1,194 +1,41 @@
-# =============================================
-# modules/shared/main.tf
-# Shared resources for Jesus Alliance MMA Portal
-# Centralized in rg-ja-shared – NOW CREATED BY TERRAFORM
-# Region: Central US
-# =============================================
+# ... (keep all your existing resources: VNet, Firewall, ACR, Log Analytics, Key Vault, Private DNS)
 
-data "azurerm_client_config" "current" {}
-
-# 1. Create the shared Resource Group FIRST (fixes all 404 ResourceGroupNotFound errors)
-resource "azurerm_resource_group" "shared" {
-  name     = var.rg_name
-  location = var.location
-  tags     = var.tags
-}
-
-# 2. Hub VNet (uses the created RG)
-resource "azurerm_virtual_network" "hub" {
-  name                = "vnet-ja-hub"
-  resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
-  address_space       = ["10.40.0.0/21"]
-  tags                = var.tags
-}
-
-# Firewall Subnet – MUST be named exactly 'AzureFirewallSubnet'
-resource "azurerm_subnet" "firewall" {
-  name                 = "AzureFirewallSubnet"
-  resource_group_name  = azurerm_resource_group.shared.name
-  virtual_network_name = azurerm_virtual_network.hub.name
-  address_prefixes     = ["10.40.1.0/26"]
-}
-
-# Firewall Public IP
-resource "azurerm_public_ip" "firewall_pip" {
-  name                = "pip-firewall"
-  resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  tags                = var.tags
-}
-
-# Azure Firewall (zone-redundant)
-resource "azurerm_firewall" "hub" {
-  name                = "fw-ja-hub"
-  resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
-  sku_name            = "AZFW_VNet"
-  sku_tier            = "Standard"
-  firewall_policy_id  = azurerm_firewall_policy.hub.id
-  tags                = var.tags
-
-  ip_configuration {
-    name                 = "configuration"
-    subnet_id            = azurerm_subnet.firewall.id
-    public_ip_address_id = azurerm_public_ip.firewall_pip.id
-  }
-}
-
-# Firewall Policy
-resource "azurerm_firewall_policy" "hub" {
-  name                = "fwpolicy-ja-hub"
-  resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
-  sku                 = "Standard"
-}
-
-# Egress application rule collection
-resource "azurerm_firewall_policy_rule_collection_group" "egress" {
-  name               = "egress-rules"
-  firewall_policy_id = azurerm_firewall_policy.hub.id
-  priority           = 100
-
-  application_rule_collection {
-    name     = "allow-https"
-    priority = 100
-    action   = "Allow"
-
-    rule {
-      name             = "https-outbound"
-      source_addresses = ["0.0.0.0/0"]
-
-      protocols {
-        type = "Https"
-        port = 443
-      }
-
-      destination_fqdns = [
-        "*.azure.com",
-        "*.microsoft.com",
-        "mcr.microsoft.com"
-      ]
-
-      terminate_tls = false
-    }
-  }
-}
-
-# ACR (Premium + zone-redundant)
-resource "azurerm_container_registry" "acr" {
-  name                          = "jamacrs20260224"
-  resource_group_name           = azurerm_resource_group.shared.name
-  location                      = var.location
-  sku                           = "Premium"
-  admin_enabled                 = false
-  zone_redundancy_enabled       = true
-  public_network_access_enabled = false
-  tags                          = var.tags
-}
-
-# Log Analytics
-resource "azurerm_log_analytics_workspace" "logs" {
-  name                = "log-ja-shared"
-  resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
-  sku                 = "PerGB2018"
-  retention_in_days   = 90
-  tags                = var.tags
-}
-
-# Key Vault
+# Key Vault – remove invalid rbac_authorization_enabled
 resource "azurerm_key_vault" "kv" {
   name                        = "kv-ja-shared"
-  resource_group_name         = azurerm_resource_group.shared.name
   location                    = var.location
+  resource_group_name         = var.rg_name
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   sku_name                    = "standard"
-  rbac_authorization_enabled  = true
-  soft_delete_retention_days  = 90
   purge_protection_enabled    = true
-  tags                        = var.tags
+  soft_delete_retention_days  = 90
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    key_permissions = [
+      "Get", "List", "Create", "Delete", "Update", "Import", "Backup", "Restore", "Recover", "Purge"
+    ]
+
+    secret_permissions = [
+      "Get", "List", "Set", "Delete", "Backup", "Restore", "Recover", "Purge"
+    ]
+
+    certificate_permissions = [
+      "Get", "List", "Update", "Create", "Import", "Delete", "Recover", "Backup", "Restore", "ManageContacts", "ManageIssuers", "GetIssuers", "ListIssuers", "SetIssuers", "DeleteIssuers"
+    ]
+  }
+
+  tags = var.tags
 }
 
-# Private DNS Zones
-resource "azurerm_private_dns_zone" "cosmos_mongo" {
-  name                = "privatelink.mongo.cosmos.azure.com"
-  resource_group_name = azurerm_resource_group.shared.name
-  tags                = var.tags
-}
-
-resource "azurerm_private_dns_zone" "acr" {
-  name                = "privatelink.azurecr.io"
-  resource_group_name = azurerm_resource_group.shared.name
-  tags                = var.tags
-}
-
-# DNS Zone links to hub VNet
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_hub" {
-  name                  = "link-hub-to-acr"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.acr.name
-  virtual_network_id    = azurerm_virtual_network.hub.id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_mongo_hub" {
-  name                  = "link-hub-to-cosmos-mongo"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.cosmos_mongo.name
-  virtual_network_id    = azurerm_virtual_network.hub.id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-# GitHub OIDC managed identity
-resource "azurerm_user_assigned_identity" "github_ci" {
-  name                = "id-ja-github-ci"
-  resource_group_name = azurerm_resource_group.shared.name
-  location            = var.location
-  tags                = var.tags
-}
-
+# Federated Identity Credential – add required resource_group_name
 resource "azurerm_federated_identity_credential" "github_ci_credential" {
-  name                = "github-ci-federated"
+  name                = "github-ci-credential"
+  resource_group_name = var.rg_name  # ← ADDED HERE
   parent_id           = azurerm_user_assigned_identity.github_ci.id
   audience            = ["api://AzureADTokenExchange"]
   issuer              = "https://token.actions.githubusercontent.com"
   subject             = "repo:jesusalliance/Accelerator.IAC:ref:refs/heads/main"
-}
-
-# Role assignments for GitHub CI identity
-resource "azurerm_role_assignment" "github_acr_push" {
-  scope                = azurerm_container_registry.acr.id
-  role_definition_name = "AcrPush"
-  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
-}
-
-resource "azurerm_role_assignment" "github_kv_secrets" {
-  scope                = azurerm_key_vault.kv.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
 }
