@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - Clean variable passing only
+# main.tf (root) - Jesus Alliance MMA Portal - Cleaned variable passing (only required args)
 
 terraform {
   required_providers {
@@ -124,71 +124,74 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# Hub-Spoke bidirectional peering (PDF 4.0 + 9.0)
+# ────────────────────────────────────────────────────────────────────────────────
+# Bidirectional hub-spoke peering (required per PDF section 4.0 & 9.0)
+# ────────────────────────────────────────────────────────────────────────────────
+
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
-  name                      = "peer-dev-to-hub"
-  resource_group_name       = module.dev.rg_name
-  virtual_network_name      = "vnet-ja-mma-dev"
-  remote_virtual_network_id = module.shared.hub_vnet_id
+  name                         = "peer-dev-to-hub"
+  resource_group_name          = module.dev.rg_name
+  virtual_network_name         = "vnet-ja-mma-dev"
+  remote_virtual_network_id    = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_dev" {
-  name                      = "peer-hub-to-dev"
-  resource_group_name       = module.shared.rg_name
-  virtual_network_name      = "vnet-ja-hub"
-  remote_virtual_network_id = module.dev.vnet_id
+  name                         = "peer-hub-to-dev"
+  resource_group_name          = module.shared.rg_name
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = module.dev.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
 }
 
 resource "azurerm_virtual_network_peering" "uat_to_hub" {
-  name                      = "peer-uat-to-hub"
-  resource_group_name       = module.uat.rg_name
-  virtual_network_name      = "vnet-ja-mma-uat"
-  remote_virtual_network_id = module.shared.hub_vnet_id
+  name                         = "peer-uat-to-hub"
+  resource_group_name          = module.uat.rg_name
+  virtual_network_name         = "vnet-ja-mma-uat"
+  remote_virtual_network_id    = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_uat" {
-  name                      = "peer-hub-to-uat"
-  resource_group_name       = module.shared.rg_name
-  virtual_network_name      = "vnet-ja-hub"
-  remote_virtual_network_id = module.uat.vnet_id
+  name                         = "peer-hub-to-uat"
+  resource_group_name          = module.shared.rg_name
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = module.uat.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
 }
 
 resource "azurerm_virtual_network_peering" "prod_to_hub" {
-  name                      = "peer-prod-to-hub"
-  resource_group_name       = module.prod.rg_name
-  virtual_network_name      = "vnet-ja-mma-prod"
-  remote_virtual_network_id = module.shared.hub_vnet_id
+  name                         = "peer-prod-to-hub"
+  resource_group_name          = module.prod.rg_name
+  virtual_network_name         = "vnet-ja-mma-prod"
+  remote_virtual_network_id    = module.shared.hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_prod" {
-  name                      = "peer-hub-to-prod"
-  resource_group_name       = module.shared.rg_name
-  virtual_network_name      = "vnet-ja-hub"
-  remote_virtual_network_id = module.prod.vnet_id
+  name                         = "peer-hub-to-prod"
+  resource_group_name          = module.shared.rg_name
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = module.prod.vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
 }
 
-# Root outputs
-output "shared_acr_login_server" { value = module.shared.acr_login_server }
-output "shared_firewall_private_ip" { value = module.shared.hub_firewall_private_ip }
-output "shared_hub_vnet_id" { value = module.shared.hub_vnet_id }
-output "dev_rg_name" { value = module.dev.rg_name }
-output "uat_rg_name" { value = module.uat.rg_name }
-output "prod_rg_name" { value = module.prod.rg_name }
+# Root-level outputs (useful for verification / next steps)
+output "shared_acr_login_server"       { value = module.shared.acr_login_server }
+output "shared_firewall_private_ip"    { value = module.shared.hub_firewall_private_ip }
+output "shared_hub_vnet_id"            { value = module.shared.hub_vnet_id }
+output "dev_rg_name"                   { value = module.dev.rg_name }
+output "uat_rg_name"                   { value = module.uat.rg_name }
+output "prod_rg_name"                  { value = module.prod.rg_name }
