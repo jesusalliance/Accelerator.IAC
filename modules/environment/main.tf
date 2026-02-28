@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (added required traffic_weight blocks inside ingress for azurerm 4.x)
+# modules/environment/main.tf - FINAL VERSION (fixed to use latest_revision_fqdn instead of non-existent default_hostname)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -235,7 +235,7 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  # Ingress configuration with required traffic_weight for provider validation
+  # Ingress configuration with required traffic_weight
   ingress {
     external_enabled = true
     target_port      = 8080
@@ -277,7 +277,7 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  # Internal backend ingress (called via VNet from frontend) - still needs traffic_weight block
+  # Internal backend (no external exposure needed, but block required for config)
   ingress {
     external_enabled = false
     target_port      = 8080
@@ -335,7 +335,8 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.default_hostname]
+    # FIXED: use latest_revision_fqdn (correct exported attribute for Container App FQDN)
+    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]
   }
 
   backend_http_settings {
@@ -375,7 +376,7 @@ resource "azurerm_public_ip" "appgw_pip" {
   tags                = var.tags
 }
 
-# GitHub CI/CD role for deploying to this environment (design section 13.0)
+# GitHub CI/CD role for deploying to this environment (design 13.0)
 resource "azurerm_role_assignment" "github_container_apps" {
   scope                = azurerm_resource_group.env.id
   role_definition_name = "Contributor"
