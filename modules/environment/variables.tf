@@ -103,6 +103,11 @@ variable "github_ci_principal_id" { type = string }
 variable "key_vault_id" { type = string }
 variable "acr_id" { type = string }
 
+variable "shared_rg_name" {
+  description = "Shared resource group name (for Private DNS zone links)"
+  type        = string
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

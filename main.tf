@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - Updated to match shared outputs
+# main.tf (root) - Jesus Alliance MMA Portal - Updated to match shared outputs + peerings + GitHub roles
 
 terraform {
   required_providers {
@@ -53,7 +53,8 @@ module "dev" {
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id   # FIXED: use correct output name
+  frontdoor_id              = module.shared.frontdoor_profile_id
+  shared_rg_name            = "rg-ja-shared"
 
   tags = {
     environment = "dev"
@@ -92,7 +93,8 @@ module "uat" {
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id   # FIXED
+  frontdoor_id              = module.shared.frontdoor_profile_id
+  shared_rg_name            = "rg-ja-shared"
 
   tags = {
     environment = "uat"
@@ -131,7 +133,8 @@ module "prod" {
   github_ci_principal_id    = module.shared.github_ci_identity_principal_id
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id   # FIXED
+  frontdoor_id              = module.shared.frontdoor_profile_id
+  shared_rg_name            = "rg-ja-shared"
 
   tags = {
     environment = "prod"
@@ -140,6 +143,61 @@ module "prod" {
   }
 
   depends_on = [module.shared]
+}
+
+# Bidirectional VNet peerings (hub <-> spokes) - required by design 4.0 & 9.0
+resource "azurerm_virtual_network_peering" "hub_to_dev" {
+  name                         = "peer-hub-to-dev"
+  resource_group_name          = "rg-ja-shared"
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = module.dev.vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+}
+
+resource "azurerm_virtual_network_peering" "dev_to_hub" {
+  name                         = "peer-dev-to-hub"
+  resource_group_name          = module.dev.rg_name
+  virtual_network_name         = "vnet-ja-mma-dev"
+  remote_virtual_network_id    = module.shared.hub_vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_uat" {
+  name                         = "peer-hub-to-uat"
+  resource_group_name          = "rg-ja-shared"
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = module.uat.vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+}
+
+resource "azurerm_virtual_network_peering" "uat_to_hub" {
+  name                         = "peer-uat-to-hub"
+  resource_group_name          = module.uat.rg_name
+  virtual_network_name         = "vnet-ja-mma-uat"
+  remote_virtual_network_id    = module.shared.hub_vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_prod" {
+  name                         = "peer-hub-to-prod"
+  resource_group_name          = "rg-ja-shared"
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = module.prod.vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+}
+
+resource "azurerm_virtual_network_peering" "prod_to_hub" {
+  name                         = "peer-prod-to-hub"
+  resource_group_name          = module.prod.rg_name
+  virtual_network_name         = "vnet-ja-mma-prod"
+  remote_virtual_network_id    = module.shared.hub_vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
 }
 
 # Root outputs
