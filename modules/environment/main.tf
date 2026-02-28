@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + variable name fix)
+# modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + CORRECTED ingress block for azurerm ~4.x)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -201,7 +201,7 @@ resource "azurerm_cosmosdb_account" "cosmos" {
   geo_location {
     location          = var.location
     failover_priority = 0
-    zone_redundant    = var.zone_redundancy_enabled   # FIXED - now matches root variable name
+    zone_redundant    = var.zone_redundancy_enabled
   }
 
   backup {
@@ -242,10 +242,14 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  ingress_enabled          = true
-  ingress_external_enabled = true
-  ingress_target_port      = 8080
-  tags                     = var.tags
+  # CORRECTED - nested ingress block (azurerm ~4.x requirement)
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    transport        = "http"
+  }
+
+  tags = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -275,9 +279,9 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  ingress_enabled     = false
-  ingress_target_port = 8080
-  tags                = var.tags
+  # Backend is internal-only → NO ingress block (matches original intent of ingress_enabled = false)
+
+  tags = var.tags
 
   identity {
     type = "SystemAssigned"
