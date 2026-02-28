@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - Cleaned variable passing (only required args)
+# main.tf (root) - Jesus Alliance MMA Portal - Cleaned (only required module arguments)
 
 terraform {
   required_providers {
@@ -124,10 +124,7 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# ────────────────────────────────────────────────────────────────────────────────
-# Bidirectional hub-spoke peering (required per PDF section 4.0 & 9.0)
-# ────────────────────────────────────────────────────────────────────────────────
-
+# Bidirectional hub-spoke peering (PDF sections 4.0 & 9.0 required)
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
   name                         = "peer-dev-to-hub"
   resource_group_name          = module.dev.rg_name
@@ -188,10 +185,10 @@ resource "azurerm_virtual_network_peering" "hub_to_prod" {
   allow_gateway_transit        = false
 }
 
-# Root-level outputs (useful for verification / next steps)
-output "shared_acr_login_server"       { value = module.shared.acr_login_server }
-output "shared_firewall_private_ip"    { value = module.shared.hub_firewall_private_ip }
-output "shared_hub_vnet_id"            { value = module.shared.hub_vnet_id }
-output "dev_rg_name"                   { value = module.dev.rg_name }
-output "uat_rg_name"                   { value = module.uat.rg_name }
-output "prod_rg_name"                  { value = module.prod.rg_name }
+# Useful root outputs for verification
+output "shared_acr_login_server"    { value = module.shared.acr_login_server }
+output "shared_firewall_private_ip" { value = module.shared.hub_firewall_private_ip }
+output "shared_hub_vnet_id"         { value = module.shared.hub_vnet_id }
+output "dev_rg_name"                { value = module.dev.rg_name }
+output "uat_rg_name"                { value = module.uat.rg_name }
+output "prod_rg_name"               { value = module.prod.rg_name }
