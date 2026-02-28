@@ -29,6 +29,9 @@ resource "azurerm_firewall" "hub" {
   resource_group_name = var.rg_name
   location            = var.location
 
+  sku_name = "AZFW_VNet"  # Required argument
+  sku_tier = "Standard"   # Required argument
+
   ip_configuration {
     name                 = "configuration"
     subnet_id            = azurerm_subnet.firewall.id
@@ -103,7 +106,6 @@ resource "azurerm_federated_identity_credential" "github_ci_credential" {
   subject             = "repo:jesusalliance/Accelerator.IAC:ref:refs/heads/main"
 }
 
-# Private DNS Zones
 resource "azurerm_private_dns_zone" "cosmos_mongo" {
   name                = "privatelink.mongo.cosmos.azure.com"
   resource_group_name = var.rg_name
@@ -116,7 +118,6 @@ resource "azurerm_private_dns_zone" "acr" {
   tags                = var.tags
 }
 
-# DNS Zone Links (to hub VNet)
 resource "azurerm_private_dns_zone_virtual_network_link" "hub_to_cosmos_mongo" {
   name                  = "link-hub-to-cosmos-mongo"
   resource_group_name   = var.rg_name
