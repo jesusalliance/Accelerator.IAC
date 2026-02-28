@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - Updated to match shared outputs + FULL networking compliance
+# main.tf (root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance
 
 terraform {
   required_providers {
@@ -54,7 +54,7 @@ module "dev" {
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
   frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"   # ADDED for DNS links
+  shared_rg_name            = "rg-ja-shared"
 
   tags = {
     environment = "dev"
@@ -94,7 +94,7 @@ module "uat" {
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
   frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"   # ADDED for DNS links
+  shared_rg_name            = "rg-ja-shared"
 
   tags = {
     environment = "uat"
@@ -134,7 +134,7 @@ module "prod" {
   key_vault_id              = module.shared.key_vault_id
   acr_id                    = module.shared.acr_id
   frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"   # ADDED for DNS links
+  shared_rg_name            = "rg-ja-shared"
 
   tags = {
     environment = "prod"
@@ -145,8 +145,7 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# Bidirectional Hub-Spoke VNet Peering (PDF sections 4.0 & 9.0)
-# Required for private connectivity, DNS resolution, private endpoints, and UDR to Azure Firewall
+# Bidirectional Hub-Spoke VNet Peering (PDF sections 4.0 & 9.0 - REQUIRED)
 resource "azurerm_virtual_network_peering" "hub_to_dev" {
   name                         = "peer-hub-to-dev"
   resource_group_name          = "rg-ja-shared"

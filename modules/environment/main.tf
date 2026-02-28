@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (subnet fix to exactly match PDF table + DNS fix + GitHub CI role + vnet_id output)
+# modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -15,16 +15,17 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  # UPDATED to EXACTLY match PDF subnet table (section 4.0) for ALL environments
+  # EXACT MATCH TO PDF SECTION 4.0 TABLE
   # DEV/UAT (az_count=1): public=0/24, private-app=1/24, DB=2/24, mgmt=3/24
-  # PROD (az_count=2): public AZ1=0/24, public AZ2=4/24 (PDF example), private-app=1/24, DB=2/24, mgmt=3/24
-  # Keeps dynamic logic, ~251 usable IPs, no overlap, fits perfectly in /21
-  public_subnet_cidrs = var.az_count == 1 ? 
+  # PROD (az_count=2): Public AZ1=0/24, Public AZ2=4/24, private-app=1/24, DB=2/24, mgmt=3/24
+  # Fits perfectly in /21, ~251 usable IPs per subnet, no overlap
+  public_subnet_cidrs = (var.az_count == 1 ?
     [cidrsubnet(var.vnet_cidr, 3, 0)] :
     [cidrsubnet(var.vnet_cidr, 3, 0), cidrsubnet(var.vnet_cidr, 3, 4)]
-  private_app_cidr    = cidrsubnet(var.vnet_cidr, 3, 1)
-  db_cidr             = cidrsubnet(var.vnet_cidr, 3, 2)
-  mgmt_cidr           = cidrsubnet(var.vnet_cidr, 3, 3)
+  )
+  private_app_cidr = cidrsubnet(var.vnet_cidr, 3, 1)
+  db_cidr          = cidrsubnet(var.vnet_cidr, 3, 2)
+  mgmt_cidr        = cidrsubnet(var.vnet_cidr, 3, 3)
 }
 
 resource "azurerm_subnet" "public" {
@@ -168,7 +169,7 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
   network_security_group_id = azurerm_network_security_group.db_nsg.id
 }
 
-# FIXED: DNS links now in SHARED RG (required for private endpoint resolution)
+# DNS links in SHARED RG (required for private endpoint resolution per PDF)
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   name                  = "link-${var.environment}-acr"
   resource_group_name   = var.shared_rg_name
@@ -367,13 +368,4 @@ resource "azurerm_role_assignment" "github_container_apps" {
   scope                = azurerm_resource_group.env.id
   role_definition_name = "Contributor"
   principal_id         = var.github_ci_principal_id
-}
-
-# Required for root peerings
-output "vnet_id" {
-  value = azurerm_virtual_network.spoke.id
-}
-
-output "rg_name" {
-  value = azurerm_resource_group.env.name
 }
