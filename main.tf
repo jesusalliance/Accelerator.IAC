@@ -6,9 +6,6 @@
 # Aligned with 3.0 design document (February 2026)
 # =============================================
 
-# main.tf - Root configuration for Jesus Alliance MMA Portal (v3.0 design)
-# Deploys shared hub + DEV/UAT/PROD spokes with Application Gateway in public subnet
-
 terraform {
   required_providers {
     azurerm = {
@@ -26,13 +23,8 @@ provider "azurerm" {
 module "shared" {
   source = "./modules/shared"
 
-  location                 = "centralus"
-  rg_name                  = "rg-ja-shared"
-  vnet_hub_cidr            = "10.40.0.0/21"
-  firewall_subnet_prefix   = "10.40.1.0/26"
-  acr_name                 = "jamacrs20260224"
-  log_analytics_name       = "log-ja-shared"
-  key_vault_name           = "kv-ja-shared"
+  location = "centralus"
+  rg_name  = "rg-ja-shared"
 
   tags = {
     project     = "ja-mma-portal"
