@@ -1,4 +1,5 @@
-# main.tf (root) - Jesus Alliance MMA Portal - Cleaned (only required module arguments)
+# main.tf (root) - Jesus Alliance MMA Portal
+# Cleaned: only passes variables actually declared & used in modules/environment
 
 terraform {
   required_providers {
@@ -124,7 +125,7 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# Bidirectional hub-spoke peering (PDF sections 4.0 & 9.0 required)
+# Bidirectional peering (PDF 4.0 & 9.0 requirement)
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
   name                         = "peer-dev-to-hub"
   resource_group_name          = module.dev.rg_name
@@ -185,7 +186,7 @@ resource "azurerm_virtual_network_peering" "hub_to_prod" {
   allow_gateway_transit        = false
 }
 
-# Useful root outputs for verification
+# Root outputs for verification
 output "shared_acr_login_server"    { value = module.shared.acr_login_server }
 output "shared_firewall_private_ip" { value = module.shared.hub_firewall_private_ip }
 output "shared_hub_vnet_id"         { value = module.shared.hub_vnet_id }
