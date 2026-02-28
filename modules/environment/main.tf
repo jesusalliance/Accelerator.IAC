@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (subnet fix to /24 + DNS fix + GitHub CI role + vnet_id output)
+# modules/environment/main.tf - FINAL VERSION (duplicates removed from end; outputs now only in outputs.tf)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -15,8 +15,7 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  # FIXED: newbits=3 → exact /24 subnets from /21 (matches design exactly: ~251 usable IPs)
-  # PROD az_count=2: Public AZ1=0.0/24, AZ2=1.0/24, Private-App=2.0/24, DB=3.0/24, etc.
+  # /24 subnets from /21 (matches design: ~251 usable IPs each)
   public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 3, i)]
   private_app_cidr    = cidrsubnet(var.vnet_cidr, 3, var.az_count)
   db_cidr             = cidrsubnet(var.vnet_cidr, 3, var.az_count + 1)
@@ -164,7 +163,6 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
   network_security_group_id = azurerm_network_security_group.db_nsg.id
 }
 
-# FIXED: DNS links now in SHARED RG (required for private endpoint resolution)
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   name                  = "link-${var.environment}-acr"
   resource_group_name   = var.shared_rg_name
@@ -363,13 +361,4 @@ resource "azurerm_role_assignment" "github_container_apps" {
   scope                = azurerm_resource_group.env.id
   role_definition_name = "Contributor"
   principal_id         = var.github_ci_principal_id
-}
-
-# Required for root peerings
-output "vnet_id" {
-  value = azurerm_virtual_network.spoke.id
-}
-
-output "rg_name" {
-  value = azurerm_resource_group.env.name
 }
