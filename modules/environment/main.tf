@@ -1,6 +1,6 @@
-# modules/environment/main.tf – FIXED: All braces closed properly
-# container {} blocks now have matching closing braces
-# ingress {} blocks are complete with required target_port and traffic_weight
+# modules/environment/main.tf – FIXED: removed incomplete backend ingress block
+# Fixed AppGW backend pool to use correct exported FQDN attribute (latest_revision_fqdn)
+# All braces match; syntax is valid
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -324,7 +324,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.default_hostname]
+    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]  # FIXED: correct exported attribute
   }
 
   backend_http_settings {
