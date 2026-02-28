@@ -1,4 +1,4 @@
-# modules/shared/main.tf - FINAL CLEAN VERSION (spoke DNS links removed)
+# modules/shared/main.tf - FIXED: Removed duplicate inline outputs (now only in outputs.tf)
 
 data "azurerm_client_config" "current" {}
 
@@ -71,7 +71,7 @@ resource "azurerm_firewall" "hub" {
   }
 }
 
-# Egress rules
+# Egress application rule collection
 resource "azurerm_firewall_policy_rule_collection_group" "egress" {
   name               = "egress-rules"
   firewall_policy_id = azurerm_firewall_policy.hub.id
@@ -101,7 +101,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
   }
 }
 
-# ACR
+# ACR (Premium + zone-redundant + private-only)
 resource "azurerm_container_registry" "acr" {
   name                          = "jamacrs20260224"
   resource_group_name           = azurerm_resource_group.shared.name
@@ -113,7 +113,7 @@ resource "azurerm_container_registry" "acr" {
   tags                          = var.tags
 }
 
-# Log Analytics
+# Log Analytics (90-day retention)
 resource "azurerm_log_analytics_workspace" "logs" {
   name                = "log-ja-shared"
   resource_group_name = azurerm_resource_group.shared.name
@@ -123,7 +123,7 @@ resource "azurerm_log_analytics_workspace" "logs" {
   tags                = var.tags
 }
 
-# Key Vault
+# Key Vault (soft-delete + purge protection)
 resource "azurerm_key_vault" "kv" {
   name                        = "kv-ja-shared"
   resource_group_name         = azurerm_resource_group.shared.name
@@ -136,7 +136,7 @@ resource "azurerm_key_vault" "kv" {
   tags                        = var.tags
 }
 
-# Private DNS Zones
+# Private DNS Zones (created here - shared)
 resource "azurerm_private_dns_zone" "cosmos_mongo" {
   name                = "privatelink.mongo.cosmos.azure.com"
   resource_group_name = azurerm_resource_group.shared.name
@@ -149,7 +149,7 @@ resource "azurerm_private_dns_zone" "acr" {
   tags                = var.tags
 }
 
-# DNS links to HUB only
+# DNS links ONLY to Hub VNet (spoke links moved to environment module)
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_hub" {
   name                  = "link-hub-to-acr"
   resource_group_name   = azurerm_resource_group.shared.name
@@ -168,7 +168,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_mongo_hub" {
   tags                  = var.tags
 }
 
-# GitHub OIDC
+# GitHub OIDC Managed Identity + Federation
 resource "azurerm_user_assigned_identity" "github_ci" {
   name                = "id-ja-github-ci"
   resource_group_name = azurerm_resource_group.shared.name
@@ -196,7 +196,7 @@ resource "azurerm_role_assignment" "github_kv_secrets" {
   principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
 }
 
-# Front Door + WAF
+# Azure Front Door + Firewall Policy (WAF)
 resource "azurerm_cdn_frontdoor_profile" "ja" {
   name                = "fd-ja-mma"
   resource_group_name = azurerm_resource_group.shared.name
@@ -252,49 +252,4 @@ resource "azurerm_cdn_frontdoor_security_policy" "ja" {
       }
     }
   }
-}
-
-# Outputs
-output "hub_vnet_id" {
-  value = azurerm_virtual_network.hub.id
-}
-
-output "hub_firewall_private_ip" {
-  value = azurerm_firewall.hub.ip_configuration[0].private_ip_address
-}
-
-output "hub_firewall_id" {
-  value = azurerm_firewall.hub.id
-}
-
-output "acr_login_server" {
-  value = azurerm_container_registry.acr.login_server
-}
-
-output "log_analytics_id" {
-  value = azurerm_log_analytics_workspace.logs.id
-}
-
-output "key_vault_id" {
-  value = azurerm_key_vault.kv.id
-}
-
-output "github_ci_identity_principal_id" {
-  value = azurerm_user_assigned_identity.github_ci.principal_id
-}
-
-output "cosmos_private_dns_zone_id" {
-  value = azurerm_private_dns_zone.cosmos_mongo.id
-}
-
-output "acr_private_dns_zone_id" {
-  value = azurerm_private_dns_zone.acr.id
-}
-
-output "acr_id" {
-  value = azurerm_container_registry.acr.id
-}
-
-output "frontdoor_profile_id" {
-  value = azurerm_cdn_frontdoor_profile.ja.id
 }
