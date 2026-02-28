@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (fixed DNS links + GitHub CI role)
+# modules/environment/main.tf - FINAL VERSION (subnet fix + DNS fix + GitHub CI role)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -15,10 +15,12 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 11, i)]
-  private_app_cidr    = cidrsubnet(var.vnet_cidr, 11, var.az_count)
-  db_cidr             = cidrsubnet(var.vnet_cidr, 11, var.az_count + 1)
-  mgmt_cidr           = cidrsubnet(var.vnet_cidr, 11, var.az_count + 2)
+  # FIXED: newbits=3 for /24 subnets ( /21 → 8 possible /24 subnets = 2048 IPs )
+  # Matches design: Public /24, Private-App /24, DB /24, Management /24
+  public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 3, i)]
+  private_app_cidr    = cidrsubnet(var.vnet_cidr, 3, var.az_count)
+  db_cidr             = cidrsubnet(var.vnet_cidr, 3, var.az_count + 1)
+  mgmt_cidr           = cidrsubnet(var.vnet_cidr, 3, var.az_count + 2)
 }
 
 resource "azurerm_subnet" "public" {
@@ -162,6 +164,7 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
   network_security_group_id = azurerm_network_security_group.db_nsg.id
 }
 
+# FIXED: DNS links now in SHARED RG (required for cross-RG private endpoints)
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   name                  = "link-${var.environment}-acr"
   resource_group_name   = var.shared_rg_name
@@ -355,7 +358,7 @@ resource "azurerm_public_ip" "appgw_pip" {
   tags                = var.tags
 }
 
-# GitHub CI/CD role for deploying Container Apps revisions (design section 13.0)
+# GitHub CI/CD role for deploying to this environment (design 13.0)
 resource "azurerm_role_assignment" "github_container_apps" {
   scope                = azurerm_resource_group.env.id
   role_definition_name = "Contributor"

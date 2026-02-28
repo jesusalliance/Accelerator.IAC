@@ -145,7 +145,7 @@ module "prod" {
   depends_on = [module.shared]
 }
 
-# Bidirectional VNet peerings (hub <-> spokes) - required by design 4.0 & 9.0
+# Bidirectional VNet peerings (hub <-> spokes) - REQUIRED for private connectivity to ACR, DNS, Key Vault, Firewall routing
 resource "azurerm_virtual_network_peering" "hub_to_dev" {
   name                         = "peer-hub-to-dev"
   resource_group_name          = "rg-ja-shared"
