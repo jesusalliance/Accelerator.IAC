@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FIXED: replaced invalid default_hostname with latest_revision_fqdn
+# modules/environment/main.tf - FINAL VERSION (subnet fix to exactly match PDF table + DNS fix + GitHub CI role + vnet_id output)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -15,14 +15,16 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  # EXACT PDF v3.0 match (section 4.0) - PROD uses .4/24 for Public AZ2
-  public_subnet_cidrs = var.environment == "prod" ? [
-    cidrsubnet(var.vnet_cidr, 3, 0), # AZ1
-    cidrsubnet(var.vnet_cidr, 3, 4)  # AZ2 per design PDF
-  ] : [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 3, i)]
-  private_app_cidr = cidrsubnet(var.vnet_cidr, 3, var.environment == "prod" ? 1 : var.az_count)
-  db_cidr          = cidrsubnet(var.vnet_cidr, 3, var.environment == "prod" ? 2 : var.az_count + 1)
-  mgmt_cidr        = cidrsubnet(var.vnet_cidr, 3, var.environment == "prod" ? 3 : var.az_count + 2)
+  # UPDATED to EXACTLY match PDF subnet table (section 4.0) for ALL environments
+  # DEV/UAT (az_count=1): public=0/24, private-app=1/24, DB=2/24, mgmt=3/24
+  # PROD (az_count=2): public AZ1=0/24, public AZ2=4/24 (PDF example), private-app=1/24, DB=2/24, mgmt=3/24
+  # Keeps dynamic logic, ~251 usable IPs, no overlap, fits perfectly in /21
+  public_subnet_cidrs = var.az_count == 1 ? 
+    [cidrsubnet(var.vnet_cidr, 3, 0)] :
+    [cidrsubnet(var.vnet_cidr, 3, 0), cidrsubnet(var.vnet_cidr, 3, 4)]
+  private_app_cidr    = cidrsubnet(var.vnet_cidr, 3, 1)
+  db_cidr             = cidrsubnet(var.vnet_cidr, 3, 2)
+  mgmt_cidr           = cidrsubnet(var.vnet_cidr, 3, 3)
 }
 
 resource "azurerm_subnet" "public" {
@@ -166,7 +168,7 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
   network_security_group_id = azurerm_network_security_group.db_nsg.id
 }
 
-# DNS links (in SHARED RG)
+# FIXED: DNS links now in SHARED RG (required for private endpoint resolution)
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   name                  = "link-${var.environment}-acr"
   resource_group_name   = var.shared_rg_name
@@ -239,17 +241,10 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  ingress {
-    external_enabled = true
-    target_port      = 8080
-
-    traffic_weight {
-      percentage      = 100
-      latest_revision = true
-    }
-  }
-
-  tags = var.tags
+  ingress_enabled          = true
+  ingress_external_enabled = true
+  ingress_target_port      = 8080
+  tags                     = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -279,17 +274,9 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  ingress {
-    external_enabled = false
-    target_port      = 8080
-
-    traffic_weight {
-      percentage      = 100
-      latest_revision = true
-    }
-  }
-
-  tags = var.tags
+  ingress_enabled     = false
+  ingress_target_port = 8080
+  tags                = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -309,8 +296,8 @@ resource "azurerm_application_gateway" "appgw" {
   location            = var.location
 
   sku {
-    name = var.appgw_sku
-    tier = "Standard_v2"
+    name     = var.appgw_sku
+    tier     = "Standard_v2"
   }
 
   autoscale_configuration {
@@ -335,7 +322,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]
+    fqdns = [azurerm_container_app.frontend.default_hostname]
   }
 
   backend_http_settings {
@@ -380,4 +367,13 @@ resource "azurerm_role_assignment" "github_container_apps" {
   scope                = azurerm_resource_group.env.id
   role_definition_name = "Contributor"
   principal_id         = var.github_ci_principal_id
+}
+
+# Required for root peerings
+output "vnet_id" {
+  value = azurerm_virtual_network.spoke.id
+}
+
+output "rg_name" {
+  value = azurerm_resource_group.env.name
 }
