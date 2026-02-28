@@ -1,7 +1,7 @@
 # =============================================
 # modules/shared/main.tf
 # Shared resources for Jesus Alliance MMA Portal - v3.0 alignment
-# Hub-Spoke | Zone-redundant | Private-by-default | Corrected Front Door
+# Hub-Spoke | Zone-redundant | Private-by-default | Fixed Front Door association
 # =============================================
 
 data "azurerm_client_config" "current" {}
@@ -107,7 +107,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
 
 # ACR (Premium + zone-redundant + private-only)
 resource "azurerm_container_registry" "acr" {
-  name                          = "jamacrs20260224"  # adjust if needed
+  name                          = "jamacrs20260224"  # change if needed
   resource_group_name           = azurerm_resource_group.shared.name
   location                      = var.location
   sku                           = "Premium"
@@ -201,13 +201,13 @@ resource "azurerm_role_assignment" "github_kv_secrets" {
 }
 
 # =============================================
-# Azure Front Door + Firewall Policy (WAF) - CORRECTED & VALIDATED
+# Azure Front Door + Firewall Policy (WAF) - FULLY CORRECTED
 # =============================================
 
 resource "azurerm_cdn_frontdoor_profile" "ja" {
   name                = "fd-ja-mma"
   resource_group_name = azurerm_resource_group.shared.name
-  sku_name            = "Standard_AzureFrontDoor"  # Use Premium_AzureFrontDoor if you need Private Link to Container Apps
+  sku_name            = "Standard_AzureFrontDoor"  # Change to "Premium_AzureFrontDoor" for private link to ACA
   tags                = var.tags
 }
 
@@ -218,9 +218,9 @@ resource "azurerm_cdn_frontdoor_endpoint" "ja" {
 }
 
 resource "azurerm_cdn_frontdoor_firewall_policy" "ja" {
-  name                = "jammawafpolicy"   # FIXED: No hyphens, starts with letter, alphanumeric only
+  name                = "jammawafpolicy"   # Alphanumeric only, starts with letter
   resource_group_name = azurerm_resource_group.shared.name
-  sku_name            = azurerm_cdn_frontdoor_profile.ja.sku_name   # Matches profile SKU
+  sku_name            = azurerm_cdn_frontdoor_profile.ja.sku_name  # Matches profile
   mode                = "Prevention"
   enabled             = true
   tags                = var.tags
@@ -242,7 +242,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "ja" {
     }
   }
 
-  # Optional: Full OWASP managed ruleset (uncomment for production)
+  # Optional: Add managed OWASP ruleset for full protection
   # managed_rules {
   #   managed_rule_set {
   #     type    = "DefaultRuleSet"
@@ -252,7 +252,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "ja" {
   # }
 }
 
-# Security Policy to associate WAF with Front Door endpoint
+# Security Policy to apply WAF to the Front Door endpoint
 resource "azurerm_cdn_frontdoor_security_policy" "ja" {
   name                     = "secpol-ja-mma"
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.ja.id
@@ -260,14 +260,20 @@ resource "azurerm_cdn_frontdoor_security_policy" "ja" {
   security_policies {
     firewall {
       cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.ja.id
+
+      association {
+        domain {
+          cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_endpoint.ja.id
+        }
+
+        patterns_to_match = ["/*"]  # Apply WAF to all paths
+      }
     }
   }
-
-  tags = var.tags
 }
 
 # =============================================
-# OUTPUTS - Updated to match root expectations
+# OUTPUTS
 # =============================================
 output "hub_vnet_id" {
   value = azurerm_virtual_network.hub.id
@@ -311,4 +317,12 @@ output "acr_id" {
 
 output "frontdoor_profile_id" {
   value = azurerm_cdn_frontdoor_profile.ja.id
+}
+
+output "frontdoor_endpoint_id" {
+  value = azurerm_cdn_frontdoor_endpoint.ja.id
+}
+
+output "frontdoor_firewall_policy_id" {
+  value = azurerm_cdn_frontdoor_firewall_policy.ja.id
 }
