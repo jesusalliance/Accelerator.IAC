@@ -60,6 +60,7 @@ module "dev" {
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
+  shared_rg_name = "rg-ja-shared"
 
   depends_on = [module.shared]
 }
@@ -99,6 +100,7 @@ module "uat" {
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
+  shared_rg_name = "rg-ja-shared"
 
   depends_on = [module.shared]
 }
@@ -138,6 +140,7 @@ module "prod" {
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
+  shared_rg_name = "rg-ja-shared"
 
   depends_on = [module.shared]
 }
