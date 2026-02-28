@@ -1,11 +1,3 @@
-# =============================================
-# main.tf (root)
-# Jesus Alliance MMA Portal - Terraform Root Configuration
-# Deploys Shared first, then DEV/UAT/PROD environments
-# Region: Central US (centralus)
-# Aligned with 3.0 design document (February 2026)
-# =============================================
-
 terraform {
   required_providers {
     azurerm = {
@@ -19,7 +11,7 @@ provider "azurerm" {
   features {}
 }
 
-# ── SHARED HUB MODULE ──
+# SHARED HUB
 module "shared" {
   source = "./modules/shared"
 
@@ -33,7 +25,7 @@ module "shared" {
   }
 }
 
-# ── DEV ENVIRONMENT ──
+# DEV
 module "dev" {
   source = "./modules/environment"
 
@@ -68,7 +60,7 @@ module "dev" {
   appgw_domain_label         = "ja-mma-dev"
 }
 
-# ── UAT ENVIRONMENT ──
+# UAT
 module "uat" {
   source = "./modules/environment"
 
@@ -103,7 +95,7 @@ module "uat" {
   appgw_domain_label         = "ja-mma-uat"
 }
 
-# ── PROD ENVIRONMENT ──
+# PROD
 module "prod" {
   source = "./modules/environment"
 

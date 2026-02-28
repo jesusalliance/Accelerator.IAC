@@ -1,9 +1,3 @@
-# =============================================
-# modules/environment/main.tf
-# Environment-specific resources (DEV/UAT/PROD)
-# NOW INCLUDES APPLICATION GATEWAY per v3.0 design
-# =============================================
-
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
   location = var.location

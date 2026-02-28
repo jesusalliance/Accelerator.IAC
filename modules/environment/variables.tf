@@ -1,7 +1,3 @@
-# =============================================
-# modules/environment/variables.tf
-# =============================================
-
 variable "environment" {
   type        = string
   description = "dev, uat, prod"
