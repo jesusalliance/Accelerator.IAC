@@ -1,6 +1,5 @@
-# modules/environment/main.tf – FIXED: 
-# - Removed incomplete ingress block from backend (internal → omit ingress)
-# - Changed AppGW fqdns to use correct exported attribute: latest_revision_fqdn
+# modules/environment/main.tf – FIXED: added latest_revision = true in frontend traffic_weight
+# This satisfies the provider validation requirement for ingress in Single revision mode
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -244,7 +243,8 @@ resource "azurerm_container_app" "frontend" {
     external_enabled = true
     target_port      = 8080
     traffic_weight {
-      percentage = 100
+      percentage      = 100
+      latest_revision = true   # FIXED: required for Single mode to route to latest revision
     }
   }
 
