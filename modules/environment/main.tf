@@ -1,5 +1,5 @@
-# modules/environment/main.tf – FINAL FIXED VERSION
-# Ingress now correctly nested inside template {} (required by azurerm provider)
+# modules/environment/main.tf – FINAL VERSION WITH CORRECT INGRESS BLOCK
+# (ingress {} block is now properly configured for azurerm >= 3.100)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -107,6 +107,7 @@ resource "azurerm_network_security_group" "public_nsg" {
     source_address_prefix      = "Internet"
     destination_address_prefix = "*"
   }
+
   tags = var.tags
 }
 
@@ -126,6 +127,7 @@ resource "azurerm_network_security_group" "private_app_nsg" {
     source_address_prefixes    = local.public_subnet_cidrs
     destination_address_prefix = "*"
   }
+
   tags = var.tags
 }
 
@@ -145,6 +147,7 @@ resource "azurerm_network_security_group" "db_nsg" {
     source_address_prefix      = local.private_app_cidr
     destination_address_prefix = "*"
   }
+
   tags = var.tags
 }
 
@@ -166,7 +169,7 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
 
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   name                  = "link-${var.environment}-acr"
-  resource_group_name   = var.rg_name
+  resource_group_name   = azurerm_resource_group.env.name
   private_dns_zone_name = "privatelink.azurecr.io"
   virtual_network_id    = azurerm_virtual_network.spoke.id
   registration_enabled  = false
@@ -174,7 +177,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
 
 resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
   name                  = "link-${var.environment}-cosmos-mongo"
-  resource_group_name   = var.rg_name
+  resource_group_name   = azurerm_resource_group.env.name
   private_dns_zone_name = "privatelink.mongo.cosmos.azure.com"
   virtual_network_id    = azurerm_virtual_network.spoke.id
   registration_enabled  = false
@@ -234,13 +237,13 @@ resource "azurerm_container_app" "frontend" {
       cpu    = "0.5"
       memory = "1Gi"
     }
+  }
 
-    ingress {
-      external_enabled = true
-      target_port      = 8080
-      traffic_weight {
-        percentage = 100
-      }
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    traffic_weight {
+      percentage = 100
     }
   }
 
@@ -272,6 +275,10 @@ resource "azurerm_container_app" "backend" {
       cpu    = "0.75"
       memory = "1.5Gi"
     }
+  }
+
+  ingress {
+    external_enabled = false
   }
 
   identity {
