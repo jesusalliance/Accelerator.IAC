@@ -1,26 +1,22 @@
 # =============================================
 # modules/environment/variables.tf
-# Input variables for environment module
 # =============================================
 
 variable "environment" {
   type        = string
-  description = "Environment name (dev, uat, prod)"
+  description = "dev, uat, prod"
 }
 
 variable "rg_name" {
-  type        = string
-  description = "Resource Group name"
+  type = string
 }
 
 variable "location" {
-  type        = string
-  description = "Azure region"
+  type = string
 }
 
 variable "vnet_cidr" {
-  type        = string
-  description = "CIDR for spoke VNet"
+  type = string
 }
 
 variable "az_count" {
@@ -87,46 +83,22 @@ variable "tags" {
   default = {}
 }
 
-variable "ingress_type" {
-  type    = string
-  default = "app_gateway"
-}
-
-variable "cosmos_zone_redundant" {
+variable "deploy_app_gateway" {
   type    = bool
   default = true
 }
 
-variable "backup_retention_hours" {
-  type    = number
-  default = 720
-}
-
 variable "appgw_sku" {
-  type        = string
-  description = "AppGW SKU (Standard_v2 for DEV/UAT, WAF_v2 for PROD)"
+  type    = string
+  default = "WAF_v2"
 }
 
 variable "appgw_capacity" {
-  type        = number
-  description = "AppGW autoscale min capacity"
-  default     = 2
+  type    = number
+  default = 2
 }
 
-variable "appgw_max_capacity" {
-  type        = number
-  description = "AppGW autoscale max capacity (higher for PROD)"
-  default     = 10
-}
-
-variable "appgw_backend_port" {
-  type        = number
-  description = "Backend port for Container App (e.g., 80 or 443)"
-  default     = 80
-}
-
-variable "appgw_health_path" {
-  type        = string
-  description = "Health probe path for backend"
-  default     = "/health"
+variable "appgw_domain_label" {
+  type    = string
+  default = null
 }

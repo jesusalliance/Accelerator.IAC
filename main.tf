@@ -6,11 +6,14 @@
 # Aligned with 3.0 design document (February 2026)
 # =============================================
 
+# main.tf - Root configuration for Jesus Alliance MMA Portal (v3.0 design)
+# Deploys shared hub + DEV/UAT/PROD spokes with Application Gateway in public subnet
+
 terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.0"
+      version = "~> 3.116"
     }
   }
 }
@@ -19,186 +22,126 @@ provider "azurerm" {
   features {}
 }
 
-# =============================================
-# SHARED INFRASTRUCTURE (deploy first)
-# =============================================
+# ── SHARED HUB MODULE ──
 module "shared" {
   source = "./modules/shared"
 
-  rg_name  = "rg-ja-shared"
-  location = "centralus"
+  location                 = "centralus"
+  rg_name                  = "rg-ja-shared"
+  vnet_hub_cidr            = "10.40.0.0/21"
+  firewall_subnet_prefix   = "10.40.1.0/26"
+  acr_name                 = "jamacrs20260224"
+  log_analytics_name       = "log-ja-shared"
+  key_vault_name           = "kv-ja-shared"
+
   tags = {
-    environment = "shared"
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
+    environment = "shared"
   }
 }
 
-# =============================================
-# DEV Environment
-# =============================================
+# ── DEV ENVIRONMENT ──
 module "dev" {
   source = "./modules/environment"
 
-  environment             = "dev"
-  rg_name                 = "rg-ja-mma-dev"
-  location                = "centralus"
-  vnet_cidr               = "10.10.0.0/21"
-  az_count                = 1
-  replica_min             = 1
-  replica_max             = 3
-  zone_redundancy_enabled = false
+  environment                = "dev"
+  rg_name                    = "rg-ja-mma-dev"
+  location                   = "centralus"
+  vnet_cidr                  = "10.10.0.0/21"
+  az_count                   = 1
+  replica_min                = 1
+  replica_max                = 3
+  zone_redundancy_enabled    = false
 
-  # Pass shared module outputs
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
+  hub_vnet_id                = module.shared.vnet_hub_id
+  hub_firewall_private_ip    = module.shared.firewall_private_ip
+  hub_firewall_id            = module.shared.firewall_id
+  acr_login_server           = module.shared.acr_login_server
+  log_analytics_id           = module.shared.log_analytics_id
+  shared_cosmos_dns_zone_id  = module.shared.cosmos_dns_zone_id
+  shared_acr_dns_zone_id     = module.shared.acr_dns_zone_id
+  github_ci_principal_id     = module.shared.github_ci_identity_principal_id
+  key_vault_id               = module.shared.key_vault_id
+  acr_id                     = module.shared.acr_id
 
-  # Define tags locally (no reference to module.shared.tags)
-  tags = {
-    environment = "dev"
-    project     = "ja-mma-portal"
-    owner       = "ja-portal-team"
-  }
+  tags = merge(
+    module.shared.tags,
+    { environment = "dev" }
+  )
 
-  ingress_type           = "app_gateway"
-  cosmos_zone_redundant  = false
-  backup_retention_hours = 168
-  appgw_sku = "Standard_v2"
-  appgw_capacity = 2
-  appgw_max_capacity = 5  # Low for DEV
-  appgw_backend_port = 80
-  appgw_health_path = "/health"
-
-  depends_on = [module.shared]
+  deploy_app_gateway         = true
+  appgw_sku                  = "Standard_v2"
+  appgw_capacity             = 2
+  appgw_domain_label         = "ja-mma-dev"
 }
 
-# =============================================
-# UAT Environment
-# =============================================
+# ── UAT ENVIRONMENT ──
 module "uat" {
   source = "./modules/environment"
 
-  environment             = "uat"
-  rg_name                 = "rg-ja-mma-uat"
-  location                = "centralus"
-  vnet_cidr               = "10.20.0.0/21"
-  az_count                = 1
-  replica_min             = 1
-  replica_max             = 5
-  zone_redundancy_enabled = false
+  environment                = "uat"
+  rg_name                    = "rg-ja-mma-uat"
+  location                   = "centralus"
+  vnet_cidr                  = "10.20.0.0/21"
+  az_count                   = 1
+  replica_min                = 1
+  replica_max                = 5
+  zone_redundancy_enabled    = false
 
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
+  hub_vnet_id                = module.shared.vnet_hub_id
+  hub_firewall_private_ip    = module.shared.firewall_private_ip
+  hub_firewall_id            = module.shared.firewall_id
+  acr_login_server           = module.shared.acr_login_server
+  log_analytics_id           = module.shared.log_analytics_id
+  shared_cosmos_dns_zone_id  = module.shared.cosmos_dns_zone_id
+  shared_acr_dns_zone_id     = module.shared.acr_dns_zone_id
+  github_ci_principal_id     = module.shared.github_ci_identity_principal_id
+  key_vault_id               = module.shared.key_vault_id
+  acr_id                     = module.shared.acr_id
 
-  tags = {
-    environment = "uat"
-    project     = "ja-mma-portal"
-    owner       = "ja-portal-team"
-  }
+  tags = merge(
+    module.shared.tags,
+    { environment = "uat" }
+  )
 
-  ingress_type           = "app_gateway"
-  cosmos_zone_redundant  = false
-  backup_retention_hours = 168
-  appgw_sku = "Standard_v2"
-  appgw_capacity = 2
-  appgw_max_capacity = 10  # Hiher for UAT
-  appgw_backend_port = 80
-  appgw_health_path = "/health"
-
-
-  depends_on = [module.shared]
+  deploy_app_gateway         = true
+  appgw_sku                  = "WAF_v2"
+  appgw_capacity             = 4
+  appgw_domain_label         = "ja-mma-uat"
 }
 
-# =============================================
-# PROD Environment
-# =============================================
+# ── PROD ENVIRONMENT ──
 module "prod" {
   source = "./modules/environment"
 
-  environment             = "prod"
-  rg_name                 = "rg-ja-mma-prod"
-  location                = "centralus"
-  vnet_cidr               = "10.30.0.0/21"
-  az_count                = 2
-  replica_min             = 1
-  replica_max             = 20
-  zone_redundancy_enabled = true
+  environment                = "prod"
+  rg_name                    = "rg-ja-mma-prod"
+  location                   = "centralus"
+  vnet_cidr                  = "10.30.0.0/21"
+  az_count                   = 3
+  replica_min                = 3
+  replica_max                = 10
+  zone_redundancy_enabled    = true
 
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
+  hub_vnet_id                = module.shared.vnet_hub_id
+  hub_firewall_private_ip    = module.shared.firewall_private_ip
+  hub_firewall_id            = module.shared.firewall_id
+  acr_login_server           = module.shared.acr_login_server
+  log_analytics_id           = module.shared.log_analytics_id
+  shared_cosmos_dns_zone_id  = module.shared.cosmos_dns_zone_id
+  shared_acr_dns_zone_id     = module.shared.acr_dns_zone_id
+  github_ci_principal_id     = module.shared.github_ci_identity_principal_id
+  key_vault_id               = module.shared.key_vault_id
+  acr_id                     = module.shared.acr_id
 
-  tags = {
-    environment = "prod"
-    project     = "ja-mma-portal"
-    owner       = "ja-portal-team"
-  }
+  tags = merge(
+    module.shared.tags,
+    { environment = "prod" }
+  )
 
-  ingress_type           = "app_gateway"
-  cosmos_zone_redundant  = true
-  backup_retention_hours = 720
-  appgw_sku = "Standard_v2"
-  appgw_capacity = 2
-  appgw_max_capacity = 20  # Higer for PROD
-  appgw_backend_port = 80
-  appgw_health_path = "/health"
-
-
-  depends_on = [module.shared]
-}
-
-# =============================================
-# ROOT-LEVEL OUTPUTS
-# =============================================
-output "shared_acr_login_server" {
-  value       = module.shared.acr_login_server
-  description = "Shared ACR login server"
-}
-
-output "shared_firewall_private_ip" {
-  value       = module.shared.hub_firewall_private_ip
-  description = "Private IP of hub Azure Firewall"
-}
-
-output "shared_hub_vnet_id" {
-  value       = module.shared.hub_vnet_id
-  description = "Hub VNet ID"
-}
-
-output "dev_rg_name" {
-  value       = module.dev.rg_name
-  description = "DEV Resource Group name"
-}
-
-output "uat_rg_name" {
-  value       = module.uat.rg_name
-  description = "UAT Resource Group name"
-}
-
-output "prod_rg_name" {
-  value       = module.prod.rg_name
-  description = "PROD Resource Group name"
+  deploy_app_gateway         = true
+  appgw_sku                  = "WAF_v2"
+  appgw_capacity             = 10
+  appgw_domain_label         = "ja-mma-prod"
 }
