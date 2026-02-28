@@ -1,39 +1,31 @@
-# =============================================
-# modules/environment/outputs.tf
-# =============================================
+# modules/environment/outputs.tf - All outputs here (no duplicates in main.tf)
 
 output "rg_name" {
-  value = azurerm_resource_group.env.name
+  description = "Environment resource group name"
+  value       = azurerm_resource_group.env.name
 }
 
 output "vnet_id" {
-  value = azurerm_virtual_network.spoke.id
+  description = "Spoke VNet ID"
+  value       = azurerm_virtual_network.spoke.id
 }
 
-output "cae_id" {
-  value = azurerm_container_app_environment.cae.id
+output "container_app_environment_id" {
+  description = "Container Apps Environment ID"
+  value       = azurerm_container_app_environment.cae.id
 }
 
-output "frontend_app_id" {
-  value = azurerm_container_app.frontend.id
+output "frontend_fqdn" {
+  description = "Frontend Container App default FQDN (for Front Door origin if public)"
+  value       = azurerm_container_app.frontend.configuration[0].ingress[0].fqdn
 }
 
-output "backend_app_id" {
-  value = azurerm_container_app.backend.id
+output "private_app_subnet_id" {
+  description = "Private-App subnet ID (for reference)"
+  value       = azurerm_subnet.private_app.id
 }
 
-output "appgw_id" {
-  value = var.deploy_app_gateway ? try(azurerm_application_gateway.appgw[0].id, null) : null
-}
-
-output "appgw_public_ip" {
-  value = var.deploy_app_gateway ? try(azurerm_public_ip.appgw_pip[0].ip_address, null) : null
-}
-
-output "appgw_fqdn" {
-  value = var.deploy_app_gateway ? try(azurerm_public_ip.appgw_pip[0].fqdn, null) : null
-}
-
-output "appgw_public_ip_id" {
-  value = var.deploy_app_gateway ? try(azurerm_public_ip.appgw_pip[0].id, null) : null
+output "cosmos_account_id" {
+  description = "Cosmos DB account ID"
+  value       = azurerm_cosmosdb_account.cosmos.id
 }
