@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FIXED: Correct subnet CIDR math + DNS links moved to shared + Cosmos private endpoint added
+# modules/environment/main.tf - FINAL FIXED VERSION (correct /24 CIDR + data source DNS links + Cosmos private endpoint)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -15,7 +15,7 @@ resource "azurerm_virtual_network" "spoke" {
 }
 
 locals {
-  # FIXED: Correct newbits for /24 subnets inside /21 VNet (24 - 21 = 3)
+  # CORRECTED: /24 subnets inside /21 VNet
   public_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vnet_cidr, 3, i)]
   private_app_cidr    = cidrsubnet(var.vnet_cidr, 3, var.az_count)
   db_cidr             = cidrsubnet(var.vnet_cidr, 3, var.az_count + 1)
@@ -163,28 +163,37 @@ resource "azurerm_subnet_network_security_group_association" "db_assoc" {
   network_security_group_id = azurerm_network_security_group.db_nsg.id
 }
 
-# REMOVED: DNS links (they now live in shared module)
-
-# Cosmos DB Private Endpoint (required by design - private-by-default)
-resource "azurerm_private_endpoint" "cosmos" {
-  name                = "pe-cosmos-${var.environment}"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.env.name
-  subnet_id           = azurerm_subnet.db.id
-
-  private_service_connection {
-    name                           = "cosmos-connection"
-    private_connection_resource_id = azurerm_cosmosdb_account.cosmos.id
-    is_manual_connection           = false
-    subresource_names              = ["MongoDB"]
-  }
-
-  private_dns_zone_group {
-    name                 = "cosmos-dns-group"
-    private_dns_zone_ids = [var.shared_cosmos_dns_zone_id]
-  }
+# Data sources for shared DNS zones
+data "azurerm_private_dns_zone" "acr" {
+  name                = "privatelink.azurecr.io"
+  resource_group_name = "rg-ja-shared"
 }
 
+data "azurerm_private_dns_zone" "cosmos_mongo" {
+  name                = "privatelink.mongo.cosmos.azure.com"
+  resource_group_name = "rg-ja-shared"
+}
+
+# Spoke DNS links
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
+  name                  = "link-${var.environment}-to-acr"
+  resource_group_name   = azurerm_resource_group.env.name
+  private_dns_zone_name = data.azurerm_private_dns_zone.acr.name
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+  tags                  = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
+  name                  = "link-${var.environment}-to-cosmos"
+  resource_group_name   = azurerm_resource_group.env.name
+  private_dns_zone_name = data.azurerm_private_dns_zone.cosmos_mongo.name
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+  tags                  = var.tags
+}
+
+# Cosmos DB + Private Endpoint
 resource "azurerm_cosmosdb_account" "cosmos" {
   name                          = "cosmos-ja-mma-${var.environment}"
   location                      = var.location
@@ -213,6 +222,26 @@ resource "azurerm_cosmosdb_account" "cosmos" {
   tags = var.tags
 }
 
+resource "azurerm_private_endpoint" "cosmos" {
+  name                = "pe-cosmos-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+  subnet_id           = azurerm_subnet.db.id
+
+  private_service_connection {
+    name                           = "cosmos-connection"
+    private_connection_resource_id = azurerm_cosmosdb_account.cosmos.id
+    is_manual_connection           = false
+    subresource_names              = ["MongoDB"]
+  }
+
+  private_dns_zone_group {
+    name                 = "cosmos-dns-group"
+    private_dns_zone_ids = [var.shared_cosmos_dns_zone_id]
+  }
+}
+
+# Container Apps Environment
 resource "azurerm_container_app_environment" "cae" {
   name                           = "cae-ja-mma-${var.environment}"
   location                       = var.location
@@ -223,6 +252,7 @@ resource "azurerm_container_app_environment" "cae" {
   tags                           = var.tags
 }
 
+# Frontend
 resource "azurerm_container_app" "frontend" {
   name                         = "frontend-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.cae.id
@@ -241,10 +271,13 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  ingress_enabled          = true
-  ingress_external_enabled = true
-  ingress_target_port      = 8080
-  tags                     = var.tags
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    transport        = "http"
+  }
+
+  tags = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -256,6 +289,7 @@ resource "azurerm_container_app" "frontend" {
   }
 }
 
+# Backend
 resource "azurerm_container_app" "backend" {
   name                         = "backend-${var.environment}"
   container_app_environment_id = azurerm_container_app_environment.cae.id
@@ -274,9 +308,7 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  ingress_enabled     = false
-  ingress_target_port = 8080
-  tags                = var.tags
+  tags = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -288,6 +320,7 @@ resource "azurerm_container_app" "backend" {
   }
 }
 
+# Application Gateway (DEV/UAT)
 resource "azurerm_application_gateway" "appgw" {
   count = var.ingress_type == "app_gateway" ? 1 : 0
 
@@ -322,7 +355,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.default_hostname]
+    fqdns = [azurerm_container_app.frontend.ingress[0].fqdn]
   }
 
   backend_http_settings {

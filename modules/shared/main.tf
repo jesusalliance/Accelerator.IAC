@@ -1,4 +1,4 @@
-# modules/shared/main.tf - FIXED: Added DNS links to all spokes + Cosmos private endpoint (private-by-default)
+# modules/shared/main.tf - FINAL CLEAN VERSION (spoke DNS links removed)
 
 data "azurerm_client_config" "current" {}
 
@@ -37,7 +37,7 @@ resource "azurerm_public_ip" "firewall_pip" {
   tags                = var.tags
 }
 
-# Firewall Policy + Firewall (unchanged - already correct)
+# Firewall Policy
 resource "azurerm_firewall_policy" "hub" {
   name                = "fwpolicy-ja-hub"
   resource_group_name = azurerm_resource_group.shared.name
@@ -53,6 +53,7 @@ resource "azurerm_firewall_policy" "hub" {
   tags = var.tags
 }
 
+# Azure Firewall
 resource "azurerm_firewall" "hub" {
   name                = "fw-ja-hub"
   resource_group_name = azurerm_resource_group.shared.name
@@ -70,6 +71,7 @@ resource "azurerm_firewall" "hub" {
   }
 }
 
+# Egress rules
 resource "azurerm_firewall_policy_rule_collection_group" "egress" {
   name               = "egress-rules"
   firewall_policy_id = azurerm_firewall_policy.hub.id
@@ -99,7 +101,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
   }
 }
 
-# ACR, Log Analytics, Key Vault, GitHub OIDC (unchanged - correct)
+# ACR
 resource "azurerm_container_registry" "acr" {
   name                          = "jamacrs20260224"
   resource_group_name           = azurerm_resource_group.shared.name
@@ -111,6 +113,7 @@ resource "azurerm_container_registry" "acr" {
   tags                          = var.tags
 }
 
+# Log Analytics
 resource "azurerm_log_analytics_workspace" "logs" {
   name                = "log-ja-shared"
   resource_group_name = azurerm_resource_group.shared.name
@@ -120,6 +123,7 @@ resource "azurerm_log_analytics_workspace" "logs" {
   tags                = var.tags
 }
 
+# Key Vault
 resource "azurerm_key_vault" "kv" {
   name                        = "kv-ja-shared"
   resource_group_name         = azurerm_resource_group.shared.name
@@ -132,7 +136,7 @@ resource "azurerm_key_vault" "kv" {
   tags                        = var.tags
 }
 
-# Private DNS Zones (in shared RG)
+# Private DNS Zones
 resource "azurerm_private_dns_zone" "cosmos_mongo" {
   name                = "privatelink.mongo.cosmos.azure.com"
   resource_group_name = azurerm_resource_group.shared.name
@@ -145,7 +149,7 @@ resource "azurerm_private_dns_zone" "acr" {
   tags                = var.tags
 }
 
-# FIXED: DNS links to HUB + ALL SPOKES
+# DNS links to HUB only
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_hub" {
   name                  = "link-hub-to-acr"
   resource_group_name   = azurerm_resource_group.shared.name
@@ -164,62 +168,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_mongo_hub" {
   tags                  = var.tags
 }
 
-# NEW: Links to DEV, UAT, PROD spokes (using module outputs)
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_dev" {
-  name                  = "link-dev-to-acr"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.acr.name
-  virtual_network_id    = var.dev_vnet_id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_dev" {
-  name                  = "link-dev-to-cosmos"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.cosmos_mongo.name
-  virtual_network_id    = var.dev_vnet_id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_uat" {
-  name                  = "link-uat-to-acr"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.acr.name
-  virtual_network_id    = var.uat_vnet_id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_uat" {
-  name                  = "link-uat-to-cosmos"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.cosmos_mongo.name
-  virtual_network_id    = var.uat_vnet_id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_prod" {
-  name                  = "link-prod-to-acr"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.acr.name
-  virtual_network_id    = var.prod_vnet_id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_prod" {
-  name                  = "link-prod-to-cosmos"
-  resource_group_name   = azurerm_resource_group.shared.name
-  private_dns_zone_name = azurerm_private_dns_zone.cosmos_mongo.name
-  virtual_network_id    = var.prod_vnet_id
-  registration_enabled  = false
-  tags                  = var.tags
-}
-
-# GitHub OIDC (unchanged)
+# GitHub OIDC
 resource "azurerm_user_assigned_identity" "github_ci" {
   name                = "id-ja-github-ci"
   resource_group_name = azurerm_resource_group.shared.name
@@ -247,7 +196,7 @@ resource "azurerm_role_assignment" "github_kv_secrets" {
   principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
 }
 
-# Front Door + WAF (unchanged)
+# Front Door + WAF
 resource "azurerm_cdn_frontdoor_profile" "ja" {
   name                = "fd-ja-mma"
   resource_group_name = azurerm_resource_group.shared.name
@@ -305,9 +254,7 @@ resource "azurerm_cdn_frontdoor_security_policy" "ja" {
   }
 }
 
-# NEW: Add these variables to shared/variables.tf later if needed, but for now we pass from root
-
-# Outputs (unchanged)
+# Outputs
 output "hub_vnet_id" {
   value = azurerm_virtual_network.hub.id
 }
