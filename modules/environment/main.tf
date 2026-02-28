@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (duplicates removed from end; outputs now only in outputs.tf)
+# modules/environment/main.tf - FINAL VERSION (ingress now uses correct nested block for azurerm 4.x)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -235,10 +235,14 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  ingress_enabled          = true
-  ingress_external_enabled = true
-  ingress_target_port      = 8080
-  tags                     = var.tags
+  # CORRECTED: ingress must be a nested block in azurerm 4.x
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    transport        = "http"
+  }
+
+  tags = var.tags
 
   identity {
     type = "SystemAssigned"
@@ -268,9 +272,14 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  ingress_enabled     = false
-  ingress_target_port = 8080
-  tags                = var.tags
+  # CORRECTED: internal backend (called from frontend via VNet)
+  ingress {
+    external_enabled = false
+    target_port      = 8080
+    transport        = "http"
+  }
+
+  tags = var.tags
 
   identity {
     type = "SystemAssigned"
