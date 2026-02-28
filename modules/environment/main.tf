@@ -1,4 +1,4 @@
-# modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + ingress traffic_weight fix for azurerm ~4.x)
+# modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + ingress traffic_weight + CORRECT FQDN reference)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -242,11 +242,11 @@ resource "azurerm_container_app" "frontend" {
     }
   }
 
-  # CORRECTED - ingress block with REQUIRED traffic_weight (azurerm ~4.x validation)
+  # ingress block with REQUIRED traffic_weight (azurerm ~4.x validation)
   ingress {
     external_enabled = true
     target_port      = 8080
-    transport        = "http"  # or "auto" if preferred; http is fine for most web apps
+    transport        = "http"  # or "auto" if preferred
 
     traffic_weight {
       percentage      = 100
@@ -284,7 +284,7 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  # Backend is internal-only → NO ingress block (correct per PDF: single frontend portal container exposed)
+  # Backend is internal-only → NO ingress block
 
   tags = var.tags
 
@@ -332,7 +332,7 @@ resource "azurerm_application_gateway" "appgw" {
 
   backend_address_pool {
     name  = "backend-pool"
-    fqdns = [azurerm_container_app.frontend.default_hostname]
+    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]  # FIXED: use exported latest_revision_fqdn
   }
 
   backend_http_settings {
