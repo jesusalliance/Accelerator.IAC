@@ -11,7 +11,7 @@ provider "azurerm" {
   features {}
 }
 
-# SHARED HUB – only supported arguments
+# SHARED HUB – only supported arguments (fixes unsupported argument errors)
 module "shared" {
   source = "./modules/shared"
 

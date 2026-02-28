@@ -1,22 +1,47 @@
-# ... (keep your existing RG, VNet, subnets, route table, peering, CAE, Container Apps – but remove ingress block)
-
-# Remove ingress block from frontend and backend Container Apps
-resource "azurerm_container_app" "frontend" {
-  # ... keep existing ...
-  # REMOVE the entire ingress block
-  # ingress {
-  #   external_enabled = true
-  #   target_port      = 80
-  #   transport        = "auto"
-  # }
-  # ...
+resource "azurerm_resource_group" "env" {
+  name     = var.rg_name
+  location = var.location
+  tags     = var.tags
 }
 
-resource "azurerm_container_app" "backend" {
-  # ... same – remove ingress block
+resource "azurerm_virtual_network" "spoke" {
+  name                = "vnet-ja-mma-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+  address_space       = [var.vnet_cidr]
+  tags                = var.tags
 }
 
-# Dedicated PE subnet
+resource "azurerm_subnet" "public" {
+  count                = var.az_count
+  name                 = "snet-public-az${count.index + 1}"
+  resource_group_name  = azurerm_resource_group.env.name
+  virtual_network_name = azurerm_virtual_network.spoke.name
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 3, count.index)]
+}
+
+resource "azurerm_subnet" "private_app" {
+  name                 = "snet-private-app"
+  resource_group_name  = azurerm_resource_group.env.name
+  virtual_network_name = azurerm_virtual_network.spoke.name
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 3, var.az_count)]
+
+  delegation {
+    name = "Microsoft.App/environments"
+    service_delegation {
+      name    = "Microsoft.App/environments"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
+}
+
+resource "azurerm_subnet" "db" {
+  name                 = "snet-db"
+  resource_group_name  = azurerm_resource_group.env.name
+  virtual_network_name = azurerm_virtual_network.spoke.name
+  address_prefixes     = [cidrsubnet(var.vnet_cidr, 3, var.az_count + 1)]
+}
+
 resource "azurerm_subnet" "private_endpoints" {
   name                 = "snet-pe"
   resource_group_name  = azurerm_resource_group.env.name
@@ -31,14 +56,97 @@ resource "azurerm_subnet_route_table_association" "pe_rt" {
   route_table_id = azurerm_route_table.spoke_rt.id
 }
 
-# Update ACR PE to use new subnet
-resource "azurerm_private_endpoint" "acr_pe" {
-  # ... keep existing ...
-  subnet_id = azurerm_subnet.private_endpoints.id
-  # ...
+resource "azurerm_route_table" "spoke_rt" {
+  name                = "rt-${var.environment}-egress"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+
+  route {
+    name                   = "to-hub-firewall"
+    address_prefix         = "0.0.0.0/0"
+    next_hop_type          = "VirtualAppliance"
+    next_hop_in_ip_address = var.hub_firewall_private_ip
+  }
+
+  tags = var.tags
 }
 
-# Application Gateway
+resource "azurerm_subnet_route_table_association" "private_app_rt" {
+  subnet_id      = azurerm_subnet.private_app.id
+  route_table_id = azurerm_route_table.spoke_rt.id
+}
+
+resource "azurerm_subnet_route_table_association" "db_rt" {
+  subnet_id      = azurerm_subnet.db.id
+  route_table_id = azurerm_route_table.spoke_rt.id
+}
+
+resource "azurerm_virtual_network_peering" "spoke_to_hub" {
+  name                         = "peer-${var.environment}-to-hub"
+  resource_group_name          = azurerm_resource_group.env.name
+  virtual_network_name         = azurerm_virtual_network.spoke.name
+  remote_virtual_network_id    = var.hub_vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+}
+
+resource "azurerm_container_app_environment" "cae" {
+  name                       = "cae-ja-mma-${var.environment}"
+  resource_group_name        = azurerm_resource_group.env.name
+  location                   = var.location
+  infrastructure_subnet_id   = azurerm_subnet.private_app.id
+  log_analytics_workspace_id = var.log_analytics_id
+  tags                       = var.tags
+}
+
+resource "azurerm_container_app" "frontend" {
+  name                         = "frontend-${var.environment}"
+  resource_group_name          = azurerm_resource_group.env.name
+  container_app_environment_id = azurerm_container_app_environment.cae.id
+  revision_mode                = "Multiple"
+
+  template {
+    container {
+      name   = "frontend"
+      image  = "${var.acr_login_server}/frontend:latest"
+      cpu    = "0.5"
+      memory = "1Gi"
+    }
+    min_replicas = var.replica_min
+    max_replicas = var.replica_max
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_container_app" "backend" {
+  name                         = "backend-${var.environment}"
+  resource_group_name          = azurerm_resource_group.env.name
+  container_app_environment_id = azurerm_container_app_environment.cae.id
+  revision_mode                = "Multiple"
+
+  template {
+    container {
+      name   = "backend"
+      image  = "${var.acr_login_server}/backend:latest"
+      cpu    = "1.0"
+      memory = "2Gi"
+    }
+    min_replicas = var.replica_min
+    max_replicas = var.replica_max
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = var.tags
+}
+
 resource "azurerm_public_ip" "appgw_pip" {
   count = var.deploy_app_gateway ? 1 : 0
 
@@ -124,4 +232,65 @@ resource "azurerm_application_gateway" "appgw" {
   tags = var.tags
 }
 
-# Cosmos and PEs (keep existing, but ensure subnet_id for ACR PE uses snet-pe)
+resource "azurerm_cosmosdb_account" "cosmos" {
+  name                = "cosmos-ja-mma-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+  offer_type          = "Standard"
+  kind                = "MongoDB"
+
+  consistency_policy {
+    consistency_level = "Session"
+  }
+
+  geo_location {
+    location          = var.location
+    failover_priority = 0
+  }
+
+  backup {
+    type                = "Periodic"
+    interval_in_minutes = 1440
+    retention_in_hours  = var.backup_retention_hours
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_private_endpoint" "cosmos_pe" {
+  name                = "pe-cosmos-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+  subnet_id           = azurerm_subnet.db.id
+
+  private_service_connection {
+    name                           = "psc-cosmos-${var.environment}"
+    private_connection_resource_id = azurerm_cosmosdb_account.cosmos.id
+    is_manual_connection           = false
+    subresource_names              = ["MongoDB"]
+  }
+
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [var.shared_cosmos_dns_zone_id]
+  }
+}
+
+resource "azurerm_private_endpoint" "acr_pe" {
+  name                = "pe-acr-${var.environment}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.env.name
+  subnet_id           = azurerm_subnet.private_endpoints.id
+
+  private_service_connection {
+    name                           = "psc-acr-${var.environment}"
+    private_connection_resource_id = var.acr_id
+    is_manual_connection           = false
+    subresource_names              = ["registry"]
+  }
+
+  private_dns_zone_group {
+    name                 = "default"
+    private_dns_zone_ids = [var.shared_acr_dns_zone_id]
+  }
+}
