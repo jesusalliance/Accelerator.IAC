@@ -1,4 +1,5 @@
-# modules/environment/main.tf - FINAL VERSION (outputs removed to fix duplicate error)
+# modules/environment/main.tf – FINAL FIXED VERSION
+# Ingress now correctly nested inside template {} (required by azurerm provider)
 
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
@@ -70,6 +71,7 @@ resource "azurerm_route_table" "private_rt" {
     next_hop_type          = "VirtualAppliance"
     next_hop_in_ip_address = var.hub_firewall_private_ip
   }
+
   tags = var.tags
 }
 
@@ -179,12 +181,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
 }
 
 resource "azurerm_cosmosdb_account" "cosmos" {
-  name                          = "cosmos-ja-mma-${var.environment}"
-  location                      = var.location
-  resource_group_name           = azurerm_resource_group.env.name
-  offer_type                    = "Standard"
-  kind                          = "MongoDB"
-  public_network_access_enabled = false
+  name                              = "cosmos-ja-mma-${var.environment}"
+  location                          = var.location
+  resource_group_name               = azurerm_resource_group.env.name
+  offer_type                        = "Standard"
+  kind                              = "MongoDB"
+  public_network_access_enabled     = false
 
   consistency_policy {
     consistency_level = "Session"
@@ -232,12 +234,15 @@ resource "azurerm_container_app" "frontend" {
       cpu    = "0.5"
       memory = "1Gi"
     }
-  }
 
-  ingress_enabled          = true
-  ingress_external_enabled = true
-  ingress_target_port      = 8080
-  tags                     = var.tags
+    ingress {
+      external_enabled = true
+      target_port      = 8080
+      traffic_weight {
+        percentage = 100
+      }
+    }
+  }
 
   identity {
     type = "SystemAssigned"
@@ -247,6 +252,8 @@ resource "azurerm_container_app" "frontend" {
     server   = var.acr_login_server
     identity = "System"
   }
+
+  tags = var.tags
 }
 
 resource "azurerm_container_app" "backend" {
@@ -267,10 +274,6 @@ resource "azurerm_container_app" "backend" {
     }
   }
 
-  ingress_enabled     = false
-  ingress_target_port = 8080
-  tags                = var.tags
-
   identity {
     type = "SystemAssigned"
   }
@@ -279,6 +282,8 @@ resource "azurerm_container_app" "backend" {
     server   = var.acr_login_server
     identity = "System"
   }
+
+  tags = var.tags
 }
 
 resource "azurerm_application_gateway" "appgw" {
