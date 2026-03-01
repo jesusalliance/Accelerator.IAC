@@ -19,6 +19,8 @@ data "terraform_remote_state" "dev" {
   config = {
     path = "../JA_MMA_DEV/terraform.tfstate"
   }
+  # Description for documentation
+  description = "Reads DEV spoke VNet ID for hub-to-spoke peering"
 }
 
 data "terraform_remote_state" "uat" {
@@ -26,6 +28,8 @@ data "terraform_remote_state" "uat" {
   config = {
     path = "../JA_MMA_UAT/terraform.tfstate"
   }
+  # Description for documentation
+  description = "Reads UAT spoke VNet ID for hub-to-spoke peering"
 }
 
 data "terraform_remote_state" "prod" {
@@ -33,6 +37,8 @@ data "terraform_remote_state" "prod" {
   config = {
     path = "../JA_MMA_PROD/terraform.tfstate"
   }
+  # Description for documentation
+  description = "Reads PROD spoke VNet ID for hub-to-spoke peering"
 }
 
 module "shared" {
@@ -117,6 +123,7 @@ resource "azurerm_virtual_network_peering" "hub_to_dev" {
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
   use_remote_gateways          = false
+  depends_on = [data.terraform_remote_state.dev]  # for hub_to_dev
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_uat" {
@@ -128,6 +135,7 @@ resource "azurerm_virtual_network_peering" "hub_to_uat" {
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
   use_remote_gateways          = false
+  depends_on = [data.terraform_remote_state.uat]  # for hub_to_uat
 }
 
 resource "azurerm_virtual_network_peering" "hub_to_prod" {
@@ -139,4 +147,5 @@ resource "azurerm_virtual_network_peering" "hub_to_prod" {
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
   use_remote_gateways          = false
+  depends_on = [data.terraform_remote_state.dev]  # for hub_to_prod
 }
