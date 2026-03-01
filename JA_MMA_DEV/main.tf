@@ -12,7 +12,7 @@ terraform {
 data "terraform_remote_state" "shared" {
   backend = "local"
   config = {
-    path = " ..\JA_MMA_SHARED\terraform.tfstate"  # adjust path if folders not siblings
+    path = "..\\JA_MMA_SHARED\\terraform.tfstate"  # adjust path if folders not siblings
   }
 }
 
