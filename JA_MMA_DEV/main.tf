@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
+# main.tf (DEV-root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
 
 terraform {
   required_providers {
