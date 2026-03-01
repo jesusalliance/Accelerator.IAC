@@ -224,10 +224,59 @@ resource "azurerm_virtual_network_peering" "prod_to_hub" {
 }
 
 
-# Root outputs
-output "shared_acr_login_server" { value = module.shared.acr_login_server }
-output "shared_firewall_private_ip" { value = module.shared.hub_firewall_private_ip }
-output "shared_hub_vnet_id" { value = module.shared.hub_vnet_id }
-output "dev_rg_name" { value = module.dev.rg_name }
-output "uat_rg_name" { value = module.uat.rg_name }
-output "prod_rg_name" { value = module.prod.rg_name }
+
+# Root outputs - Shared-only (used by DEV/UAT/PROD folders via remote state)
+output "shared_acr_login_server" {
+  value       = module.shared.acr_login_server
+  description = "ACR login server for image pulls"
+}
+
+output "shared_firewall_private_ip" {
+  value       = module.shared.hub_firewall_private_ip
+  description = "Azure Firewall private IP for UDR next-hop in spokes"
+}
+
+output "shared_hub_vnet_id" {
+  value       = module.shared.hub_vnet_id
+  description = "Hub VNet ID for bidirectional peering from spokes"
+}
+
+output "shared_cosmos_dns_zone_id" {
+  value       = module.shared.cosmos_private_dns_zone_id
+  description = "Shared Cosmos DB private DNS zone ID for spoke VNet links"
+}
+
+output "shared_acr_dns_zone_id" {
+  value       = module.shared.acr_private_dns_zone_id
+  description = "Shared ACR private DNS zone ID for spoke VNet links"
+}
+
+output "shared_log_analytics_id" {
+  value       = module.shared.log_analytics_id
+  description = "Log Analytics workspace ID for Container Apps logging"
+}
+
+output "shared_key_vault_id" {
+  value       = module.shared.key_vault_id
+  description = "Shared Key Vault ID for secrets access"
+}
+
+output "shared_acr_id" {
+  value       = module.shared.acr_id
+  description = "Shared ACR resource ID (for RBAC)"
+}
+
+output "shared_frontdoor_id" {
+  value       = module.shared.frontdoor_profile_id
+  description = "Shared Front Door profile ID (for UAT/PROD ingress)"
+}
+
+output "shared_github_ci_principal_id" {
+  value       = module.shared.github_ci_identity_principal_id
+  description = "GitHub CI managed identity principal ID (for OIDC/RBAC)"
+}
+
+output "shared_rg_name" {
+  value       = "rg-ja-shared"
+  description = "Shared resource group name (static)"
+}
