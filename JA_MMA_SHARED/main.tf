@@ -19,8 +19,6 @@ data "terraform_remote_state" "dev" {
   config = {
     path = "../JA_MMA_DEV/terraform.tfstate"
   }
-  # Description for documentation
-  description = "Reads DEV spoke VNet ID for hub-to-spoke peering"
 }
 
 data "terraform_remote_state" "uat" {
@@ -28,8 +26,6 @@ data "terraform_remote_state" "uat" {
   config = {
     path = "../JA_MMA_UAT/terraform.tfstate"
   }
-  # Description for documentation
-  description = "Reads UAT spoke VNet ID for hub-to-spoke peering"
 }
 
 data "terraform_remote_state" "prod" {
@@ -37,8 +33,6 @@ data "terraform_remote_state" "prod" {
   config = {
     path = "../JA_MMA_PROD/terraform.tfstate"
   }
-  # Description for documentation
-  description = "Reads PROD spoke VNet ID for hub-to-spoke peering"
 }
 
 module "shared" {
