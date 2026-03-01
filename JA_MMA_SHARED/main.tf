@@ -13,6 +13,28 @@ provider "azurerm" {
   features {}
 }
 
+# Read spoke VNets from their folders (for hub-to-spoke peering)
+data "terraform_remote_state" "dev" {
+  backend = "local"
+  config = {
+    path = "../JA_MMA_DEV/terraform.tfstate"
+  }
+}
+
+data "terraform_remote_state" "uat" {
+  backend = "local"
+  config = {
+    path = "../JA_MMA_UAT/terraform.tfstate"
+  }
+}
+
+data "terraform_remote_state" "prod" {
+  backend = "local"
+  config = {
+    path = "../JA_MMA_PROD/terraform.tfstate"
+  }
+}
+
 module "shared" {
   source = "./modules/shared"
 
@@ -25,203 +47,6 @@ module "shared" {
   }
 }
 
-module "dev" {
-  source = "./modules/environment"
-
-  environment             = "dev"
-  rg_name                 = "rg-ja-mma-dev"
-  location                = "centralus"
-  vnet_cidr               = "10.10.0.0/21"
-  az_count                = 1
-  replica_min             = 1
-  replica_max             = 3
-  zone_redundancy_enabled = false
-  ingress_type            = "app_gateway"
-  backup_retention_hours  = 168
-  appgw_sku               = "Standard_v2"
-  appgw_capacity          = 2
-  appgw_max_capacity      = 5
-
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"
-
-  tags = {
-    environment = "dev"
-    project     = "ja-mma-portal"
-    owner       = "ja-portal-team"
-  }
-
-  depends_on = [module.shared]
-}
-
-module "uat" {
-  source = "./modules/environment"
-
-  environment             = "uat"
-  rg_name                 = "rg-ja-mma-uat"
-  location                = "centralus"
-  vnet_cidr               = "10.20.0.0/21"
-  az_count                = 1
-  replica_min             = 1
-  replica_max             = 5
-  zone_redundancy_enabled = false
-  ingress_type            = "front_door"
-  backup_retention_hours  = 168
-  appgw_sku               = "Standard_v2"
-  appgw_capacity          = 2
-  appgw_max_capacity      = 10
-
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"
-
-  tags = {
-    environment = "uat"
-    project     = "ja-mma-portal"
-    owner       = "ja-portal-team"
-  }
-
-  depends_on = [module.shared]
-}
-
-module "prod" {
-  source = "./modules/environment"
-
-  environment             = "prod"
-  rg_name                 = "rg-ja-mma-prod"
-  location                = "centralus"
-  vnet_cidr               = "10.30.0.0/21"
-  az_count                = 2
-  replica_min             = 1
-  replica_max             = 20
-  zone_redundancy_enabled = true
-  ingress_type            = "front_door"
-  backup_retention_hours  = 720
-  appgw_sku               = "WAF_v2"
-  appgw_capacity          = 3
-  appgw_max_capacity      = 20
-
-  hub_vnet_id               = module.shared.hub_vnet_id
-  hub_firewall_private_ip   = module.shared.hub_firewall_private_ip
-  hub_firewall_id           = module.shared.hub_firewall_id
-  acr_login_server          = module.shared.acr_login_server
-  log_analytics_id          = module.shared.log_analytics_id
-  shared_cosmos_dns_zone_id = module.shared.cosmos_private_dns_zone_id
-  shared_acr_dns_zone_id    = module.shared.acr_private_dns_zone_id
-  github_ci_principal_id    = module.shared.github_ci_identity_principal_id
-  key_vault_id              = module.shared.key_vault_id
-  acr_id                    = module.shared.acr_id
-  frontdoor_id              = module.shared.frontdoor_profile_id
-  shared_rg_name            = "rg-ja-shared"
-
-  tags = {
-    environment = "prod"
-    project     = "ja-mma-portal"
-    owner       = "ja-portal-team"
-  }
-
-  depends_on = [module.shared]
-}
-
-# Bidirectional Hub-Spoke VNet Peering (PDF sections 4.0 & 9.0 - REQUIRED)
-# Place this AFTER all module calls (dev, uat, prod, shared) so outputs are available
-
-resource "azurerm_virtual_network_peering" "hub_to_dev" {
-  name                         = "peer-hub-to-dev"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.dev.vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false          # ← ADD this line
-  use_remote_gateways          = false          # ← ADD this line
-
-  depends_on = [module.dev]                      # ← ADD this (optional but recommended)
-}
-
-resource "azurerm_virtual_network_peering" "dev_to_hub" {
-  name                         = "peer-dev-to-hub"
-  resource_group_name          = module.dev.rg_name
-  virtual_network_name         = "vnet-ja-mma-dev"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false          # ← ADD
-  use_remote_gateways          = false          # ← ADD
-
-  depends_on = [module.dev, module.shared]       # ← ADD
-}
-
-resource "azurerm_virtual_network_peering" "hub_to_uat" {
-  name                         = "peer-hub-to-uat"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.uat.vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-
-  depends_on = [module.uat]
-}
-
-resource "azurerm_virtual_network_peering" "uat_to_hub" {
-  name                         = "peer-uat-to-hub"
-  resource_group_name          = module.uat.rg_name
-  virtual_network_name         = "vnet-ja-mma-uat"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-
-  depends_on = [module.uat, module.shared]
-}
-
-resource "azurerm_virtual_network_peering" "hub_to_prod" {
-  name                         = "peer-hub-to-prod"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.prod.vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-
-  depends_on = [module.prod]
-}
-
-resource "azurerm_virtual_network_peering" "prod_to_hub" {
-  name                         = "peer-prod-to-hub"
-  resource_group_name          = module.prod.rg_name
-  virtual_network_name         = "vnet-ja-mma-prod"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-
-  depends_on = [module.prod, module.shared]
-}
 
 
 
@@ -279,4 +104,39 @@ output "shared_github_ci_principal_id" {
 output "shared_rg_name" {
   value       = "rg-ja-shared"
   description = "Shared resource group name (static)"
+}
+
+
+# Hub-to-spoke peering (created in Shared folder after spokes exist)
+resource "azurerm_virtual_network_peering" "hub_to_dev" {
+  name                         = "peer-hub-to-dev"
+  resource_group_name          = "rg-ja-shared"
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = data.terraform_remote_state.dev.outputs.dev_vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_uat" {
+  name                         = "peer-hub-to-uat"
+  resource_group_name          = "rg-ja-shared"
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = data.terraform_remote_state.uat.outputs.uat_vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+}
+
+resource "azurerm_virtual_network_peering" "hub_to_prod" {
+  name                         = "peer-hub-to-prod"
+  resource_group_name          = "rg-ja-shared"
+  virtual_network_name         = "vnet-ja-hub"
+  remote_virtual_network_id    = data.terraform_remote_state.prod.outputs.prod_vnet_id
+  allow_virtual_network_access = true
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
 }
