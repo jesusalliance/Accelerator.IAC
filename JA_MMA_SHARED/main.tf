@@ -14,26 +14,26 @@ provider "azurerm" {
 }
 
 # Read spoke VNets from their folders (for hub-to-spoke peering)
-data "terraform_remote_state" "dev" {
-  backend = "local"
-  config = {
-    path = "..//JA_MMA_DEV//terraform.tfstate"
-  }
-}
+#data "terraform_remote_state" "dev" {
+#  backend = "local"
+#  config = {
+#    path = "..//JA_MMA_DEV//terraform.tfstate"
+#  }
+#}
 
-data "terraform_remote_state" "uat" {
-  backend = "local"
-  config = {
-    path = "..\\JA_MMA_UAT\\terraform.tfstate"
-  }
-}
+#data "terraform_remote_state" "uat" {
+#  backend = "local"
+#  config = {
+#    path = "..\\JA_MMA_UAT\\terraform.tfstate"
+# }
+#}
 
-data "terraform_remote_state" "prod" {
-  backend = "local"
-  config = {
-    path = "..\\JA_MMA_PROD\\terraform.tfstate"
-  }
-}
+#data "terraform_remote_state" "prod" {
+#  backend = "local"
+#  config = {
+#    path = "..\\JA_MMA_PROD\\terraform.tfstate"
+#  }
+#}
 
 module "shared" {
   source = "./modules/shared"
@@ -107,38 +107,38 @@ output "shared_rg_name" {
 
 
 # Hub-to-spoke peering (created in Shared folder after spokes exist)
-resource "azurerm_virtual_network_peering" "hub_to_dev" {
-  name                         = "peer-hub-to-dev"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = data.terraform_remote_state.dev.outputs.dev_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-  depends_on = [data.terraform_remote_state.dev]  # for hub_to_dev
-}
+# resource "azurerm_virtual_network_peering" "hub_to_dev" {
+#  name                         = "peer-hub-to-dev"
+#  resource_group_name          = "rg-ja-shared"
+#  virtual_network_name         = "vnet-ja-hub"
+#  remote_virtual_network_id    = data.terraform_remote_state.dev.outputs.dev_vnet_id
+#  allow_virtual_network_access = true
+#  allow_forwarded_traffic      = true
+#  allow_gateway_transit        = false
+#  use_remote_gateways          = false
+#  depends_on = [data.terraform_remote_state.dev]  # for hub_to_dev
+#}
 
-resource "azurerm_virtual_network_peering" "hub_to_uat" {
-  name                         = "peer-hub-to-uat"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = data.terraform_remote_state.uat.outputs.uat_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-  depends_on = [data.terraform_remote_state.uat]  # for hub_to_uat
-}
+#resource "azurerm_virtual_network_peering" "hub_to_uat" {
+#  name                         = "peer-hub-to-uat"
+#  resource_group_name          = "rg-ja-shared"
+#  virtual_network_name         = "vnet-ja-hub"
+#  remote_virtual_network_id    = data.terraform_remote_state.uat.outputs.uat_vnet_id
+#  allow_virtual_network_access = true
+#  allow_forwarded_traffic      = true
+#  allow_gateway_transit        = false
+#  use_remote_gateways          = false
+#  depends_on = [data.terraform_remote_state.uat]  # for hub_to_uat
+#}
 
-resource "azurerm_virtual_network_peering" "hub_to_prod" {
-  name                         = "peer-hub-to-prod"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = data.terraform_remote_state.prod.outputs.prod_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-  depends_on = [data.terraform_remote_state.dev]  # for hub_to_prod
-}
+#resource "azurerm_virtual_network_peering" "hub_to_prod" {
+#  name                         = "peer-hub-to-prod"
+#  resource_group_name          = "rg-ja-shared"
+#  virtual_network_name         = "vnet-ja-hub"
+#  remote_virtual_network_id    = data.terraform_remote_state.prod.outputs.prod_vnet_id
+#  allow_virtual_network_access = true
+#  allow_forwarded_traffic      = true
+#  allow_gateway_transit        = false
+#  use_remote_gateways          = false
+#  depends_on = [data.terraform_remote_state.dev]  # for hub_to_prod
+#}
