@@ -1,4 +1,4 @@
-# main.tf (root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
+# main.tf (SHARED ENV root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
 
 terraform {
   required_providers {
@@ -17,21 +17,21 @@ provider "azurerm" {
 data "terraform_remote_state" "dev" {
   backend = "local"
   config = {
-    path = "../JA_MMA_DEV/terraform.tfstate"
+    path = "..//JA_MMA_DEV//terraform.tfstate"
   }
 }
 
 data "terraform_remote_state" "uat" {
   backend = "local"
   config = {
-    path = "../JA_MMA_UAT/terraform.tfstate"
+    path = "..\\JA_MMA_UAT\\terraform.tfstate"
   }
 }
 
 data "terraform_remote_state" "prod" {
   backend = "local"
   config = {
-    path = "../JA_MMA_PROD/terraform.tfstate"
+    path = "..\\JA_MMA_PROD\\terraform.tfstate"
   }
 }
 
@@ -142,4 +142,6 @@ resource "azurerm_virtual_network_peering" "hub_to_prod" {
   allow_gateway_transit        = false
   use_remote_gateways          = false
   depends_on = [data.terraform_remote_state.dev]  # for hub_to_prod
+  shared_rg_name               = "rg-ja-shared"
+
 }
