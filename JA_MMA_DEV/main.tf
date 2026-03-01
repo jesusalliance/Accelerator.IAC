@@ -62,92 +62,26 @@ module "dev" {
 }
 
 
-# Bidirectional Hub-Spoke VNet Peering (PDF sections 4.0 & 9.0 - REQUIRED)
-# Place this AFTER all module calls (dev, uat, prod, shared) so outputs are available
-
-resource "azurerm_virtual_network_peering" "hub_to_dev" {
-  name                         = "peer-hub-to-dev"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.dev.vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false          # ← ADD this line
-  use_remote_gateways          = false          # ← ADD this line
-
-  depends_on = [module.dev]                      # ← ADD this (optional but recommended)
-}
-
+# Spoke-to-hub peering for DEV
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
   name                         = "peer-dev-to-hub"
   resource_group_name          = module.dev.rg_name
   virtual_network_name         = "vnet-ja-mma-dev"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false          # ← ADD
-  use_remote_gateways          = false          # ← ADD
-
-  depends_on = [module.dev, module.shared]       # ← ADD
-}
-
-resource "azurerm_virtual_network_peering" "hub_to_uat" {
-  name                         = "peer-hub-to-uat"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.uat.vnet_id
+  remote_virtual_network_id    = data.terraform_remote_state.shared.outputs.shared_hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
   allow_gateway_transit        = false
   use_remote_gateways          = false
-
-  depends_on = [module.uat]
-}
-
-resource "azurerm_virtual_network_peering" "uat_to_hub" {
-  name                         = "peer-uat-to-hub"
-  resource_group_name          = module.uat.rg_name
-  virtual_network_name         = "vnet-ja-mma-uat"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-
-  depends_on = [module.uat, module.shared]
-}
-
-resource "azurerm_virtual_network_peering" "hub_to_prod" {
-  name                         = "peer-hub-to-prod"
-  resource_group_name          = "rg-ja-shared"
-  virtual_network_name         = "vnet-ja-hub"
-  remote_virtual_network_id    = module.prod.vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-
-  depends_on = [module.prod]
-}
-
-resource "azurerm_virtual_network_peering" "prod_to_hub" {
-  name                         = "peer-prod-to-hub"
-  resource_group_name          = module.prod.rg_name
-  virtual_network_name         = "vnet-ja-mma-prod"
-  remote_virtual_network_id    = module.shared.hub_vnet_id
-  allow_virtual_network_access = true
-  allow_forwarded_traffic      = true
-  allow_gateway_transit        = false
-  use_remote_gateways          = false
-
-  depends_on = [module.prod, module.shared]
 }
 
 
-# Root outputs
-output "shared_acr_login_server" { value = module.shared.acr_login_server }
-output "shared_firewall_private_ip" { value = module.shared.hub_firewall_private_ip }
-output "shared_hub_vnet_id" { value = module.shared.hub_vnet_id }
-output "dev_rg_name" { value = module.dev.rg_name }
-output "uat_rg_name" { value = module.uat.rg_name }
-output "prod_rg_name" { value = module.prod.rg_name }
+# Root outputs - DEV folder only
+output "dev_rg_name" {
+  value       = module.dev.rg_name
+  description = "DEV resource group name"
+}
+
+output "dev_vnet_id" {
+  value       = module.dev.vnet_id
+  description = "DEV spoke VNet ID (for debugging or future use)"
+}
