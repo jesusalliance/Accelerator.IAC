@@ -103,7 +103,6 @@ output "shared_github_ci_principal_id" {
 
 output "shared_rg_name" {
   value       = "rg-ja-shared"
-  description = "Shared resource group name (static)"
 }
 
 
@@ -142,6 +141,4 @@ resource "azurerm_virtual_network_peering" "hub_to_prod" {
   allow_gateway_transit        = false
   use_remote_gateways          = false
   depends_on = [data.terraform_remote_state.dev]  # for hub_to_prod
-  shared_rg_name               = "rg-ja-shared"
-
 }
