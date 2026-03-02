@@ -13,7 +13,7 @@ provider "azurerm" {
   features {}
 }
 
- Read spoke VNets from their folders (for hub-to-spoke peering)
+#Read spoke VNets from their folders (for hub-to-spoke peering)
 data "terraform_remote_state" "dev" {
   backend = "local"
   config = {
