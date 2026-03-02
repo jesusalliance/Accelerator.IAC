@@ -68,8 +68,6 @@ module "uat" {
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
-
-  depends_on = [module.shared]
 }
 
 
