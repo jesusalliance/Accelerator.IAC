@@ -36,10 +36,6 @@ output "acr_private_dns_zone_id" {
   value = azurerm_private_dns_zone.acr.id
 }
 
-output "acr_id" {
-  value = azurerm_container_registry.acr.id
-}
-
 output "frontdoor_profile_id" {
   value = azurerm_cdn_frontdoor_profile.ja.id
 }
