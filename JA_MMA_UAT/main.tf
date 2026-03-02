@@ -85,25 +85,26 @@ resource "azurerm_virtual_network_peering" "uat_to_hub" {
   use_remote_gateways          = false
 }
 
+
 # UAT - ACR registry DNS zone link
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_registry_uat" {
   name                  = "link-uat-to-acr-registry"
-  resource_group_name   = module.uat.rg_name          # Fixed from earlier error
+  resource_group_name   = module.uat.rg_name          # ← Use module output/attribute
   private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_registry_dns_zone_name
-  virtual_network_id    = module.uat.vnet_id          # Fixed from earlier error
-  registration_enabled  = false
-  tags                  = var.tags                    # Now valid after declaring variable
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_uat" {
-  name                  = "link-uat-to-acr-data"
-  resource_group_name   = azurerm_resource_group.uat.name
-  private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_data_dns_zone_name
-  virtual_network_id    = azurerm_virtual_network.uat.id
+  virtual_network_id    = module.uat.vnet_id          # ← Use module output/attribute
   registration_enabled  = false
   tags                  = var.tags
 }
 
+# UAT - ACR data DNS zone link
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_uat" {
+  name                  = "link-uat-to-acr-data"
+  resource_group_name   = module.uat.rg_name
+  private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_data_dns_zone_name
+  virtual_network_id    = module.uat.vnet_id
+  registration_enabled  = false
+  tags                  = var.tags
+}
 
 
 # Root outputs - UAT folder only
