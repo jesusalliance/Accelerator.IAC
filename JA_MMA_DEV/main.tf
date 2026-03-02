@@ -74,6 +74,24 @@ resource "azurerm_virtual_network_peering" "dev_to_hub" {
   use_remote_gateways          = false
 }
 
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_registry_dev" {
+  name                  = "link-dev-to-acr-registry"
+  resource_group_name   = azurerm_resource_group.dev.name  # Adjust to your RG
+  private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_registry_dns_zone_name
+  virtual_network_id    = azurerm_virtual_network.dev.id   # Your spoke VNet
+  registration_enabled  = false
+  tags                  = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_dev" {
+  name                  = "link-dev-to-acr-data"
+  resource_group_name   = azurerm_resource_group.dev.name
+  private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_data_dns_zone_name
+  virtual_network_id    = azurerm_virtual_network.dev.id
+  registration_enabled  = false
+  tags                  = var.tags
+}
+
 
 # Root outputs - DEV folder only
 output "dev_rg_name" {

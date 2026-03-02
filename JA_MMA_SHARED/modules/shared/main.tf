@@ -71,6 +71,14 @@ resource "azurerm_firewall" "hub" {
   }
 }
 
+resource "azurerm_subnet" "private_endpoint" {
+  name                 = "PrivateEndpointSubnet"
+  resource_group_name  = azurerm_resource_group.shared.name
+  virtual_network_name = azurerm_virtual_network.hub.name
+  address_prefixes     = ["10.40.3.0/24"]
+  enforce_private_link_endpoint_network_policies = true
+}
+
 # Egress rules
 resource "azurerm_firewall_policy_rule_collection_group" "egress" {
   name               = "egress-rules"
@@ -109,8 +117,32 @@ resource "azurerm_container_registry" "acr" {
   sku                           = "Premium"
   admin_enabled                 = false
   zone_redundancy_enabled       = true
-  public_network_access_enabled = false
+  public_network_access_enabled = true  # Enables Selected networks mode
   tags                          = var.tags
+
+  network_rule_set {
+    default_action = "Deny"
+    ip_rule {
+      action   = "Allow"
+      ip_range = "104.176.84.255/32"  # Your IP; add to variables.tf if dynamic
+    }
+  }
+}
+
+resource "azurerm_private_endpoint" "acr_pe" {
+  name                = "pe-acr-shared"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.shared.name
+  subnet_id           = azurerm_subnet.private_endpoint.id
+
+  private_service_connection {
+    name                           = "psc-acr"
+    private_connection_resource_id = azurerm_container_registry.acr.id
+    is_manual_connection           = false
+    subresource_names              = ["registry"]
+  }
+
+  tags = var.tags
 }
 
 # Log Analytics
@@ -149,11 +181,26 @@ resource "azurerm_private_dns_zone" "acr" {
   tags                = var.tags
 }
 
+resource "azurerm_private_dns_zone" "acr_data" {
+  name                = "privatelink.centralus.data.azurecr.io"  # Adjust region if not centralus
+  resource_group_name = azurerm_resource_group.shared.name
+  tags                = var.tags
+}
+
 # DNS links to HUB only
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_hub" {
   name                  = "link-hub-to-acr"
   resource_group_name   = azurerm_resource_group.shared.name
   private_dns_zone_name = azurerm_private_dns_zone.acr.name
+  virtual_network_id    = azurerm_virtual_network.hub.id
+  registration_enabled  = false
+  tags                  = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_hub" {
+  name                  = "link-hub-to-acr-data"
+  resource_group_name   = azurerm_resource_group.shared.name
+  private_dns_zone_name = azurerm_private_dns_zone.acr_data.name
   virtual_network_id    = azurerm_virtual_network.hub.id
   registration_enabled  = false
   tags                  = var.tags

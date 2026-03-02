@@ -105,8 +105,34 @@ output "shared_rg_name" {
   value       = "rg-ja-shared"
 }
 
+output "private_endpoint_subnet_id" {
+  description = "ID of the dedicated PrivateEndpoint subnet in hub"
+  value       = azurerm_subnet.private_endpoint.id
+}
 
- Hub-to-spoke peering (created in Shared folder after spokes exist)
+output "acr_private_endpoint_id" {
+  description = "ID of the ACR private endpoint"
+  value       = azurerm_private_endpoint.acr_pe.id
+}
+
+output "acr_registry_dns_zone_name" {
+  description = "Name of the ACR registry Private DNS Zone (for spoke links)"
+  value       = azurerm_private_dns_zone.acr.name  # Assuming your existing zone is azurerm_private_dns_zone.acr
+}
+
+output "acr_data_dns_zone_name" {
+  description = "Name of the ACR data Private DNS Zone (for spoke links)"
+  value       = azurerm_private_dns_zone.acr_data.name
+}
+
+output "acr_id" {
+  description = "ID of the shared ACR (if not already output)"
+  value       = azurerm_container_registry.acr.id
+}
+
+
+
+#Hub-to-spoke peering (created in Shared folder after spokes exist)
  resource "azurerm_virtual_network_peering" "hub_to_dev" {
   name                         = "peer-hub-to-dev"
   resource_group_name          = "rg-ja-shared"
