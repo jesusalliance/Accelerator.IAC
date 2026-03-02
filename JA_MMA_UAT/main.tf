@@ -9,6 +9,17 @@ terraform {
   }
 }
 
+variable "tags" {
+  description = "Common tags for all resources"
+  type        = map(string)
+  default     = {
+    environment = "uat"
+    project     = "ja-mma-portal"
+    owner       = "ja-portal-team"
+  }
+}
+
+
 data "terraform_remote_state" "shared" {
   backend = "local"
   config = {
@@ -74,13 +85,14 @@ resource "azurerm_virtual_network_peering" "uat_to_hub" {
   use_remote_gateways          = false
 }
 
+# UAT - ACR registry DNS zone link
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_registry_uat" {
   name                  = "link-uat-to-acr-registry"
-  resource_group_name   = azurerm_resource_group.uat.name  # Adjust to your RG
+  resource_group_name   = module.uat.rg_name          # Fixed from earlier error
   private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_registry_dns_zone_name
-  virtual_network_id    = azurerm_virtual_network.uat.id   # Your spoke VNet
+  virtual_network_id    = module.uat.vnet_id          # Fixed from earlier error
   registration_enabled  = false
-  tags                  = var.tags
+  tags                  = var.tags                    # Now valid after declaring variable
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_uat" {

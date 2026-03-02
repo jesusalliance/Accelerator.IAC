@@ -9,6 +9,16 @@ terraform {
   }
 }
 
+variable "tags" {
+  description = "Common tags for all resources"
+  type        = map(string)
+  default     = {
+    environment = "dev"
+    project     = "ja-mma-portal"
+    owner       = "ja-portal-team"
+  }
+}
+
 data "terraform_remote_state" "shared" {
   backend = "local"
   config = {
@@ -74,22 +84,24 @@ resource "azurerm_virtual_network_peering" "dev_to_hub" {
   use_remote_gateways          = false
 }
 
+# DEV - ACR registry DNS zone link
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_registry_dev" {
   name                  = "link-dev-to-acr-registry"
-  resource_group_name   = azurerm_resource_group.dev.name  # Adjust to your RG
+  resource_group_name   = module.dev.rg_name          # Fixed from earlier error
   private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_registry_dns_zone_name
-  virtual_network_id    = azurerm_virtual_network.dev.id   # Your spoke VNet
+  virtual_network_id    = module.dev.vnet_id          # Fixed from earlier error
   registration_enabled  = false
-  tags                  = var.tags
+  tags                  = var.tags                    # Now valid after declaring variable
 }
 
+# DEV - ACR data DNS zone link
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_dev" {
   name                  = "link-dev-to-acr-data"
-  resource_group_name   = azurerm_resource_group.dev.name
+  resource_group_name   = module.dev.rg_name
   private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_data_dns_zone_name
-  virtual_network_id    = azurerm_virtual_network.dev.id
+  virtual_network_id    = module.dev.vnet_id
   registration_enabled  = false
-  tags                  = var.tags
+  tags                  = var.tags                    # Now valid
 }
 
 
