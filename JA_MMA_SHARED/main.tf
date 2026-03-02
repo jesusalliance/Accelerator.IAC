@@ -105,31 +105,22 @@ output "shared_rg_name" {
   value       = "rg-ja-shared"
 }
 
-output "private_endpoint_subnet_id" {
-  description = "ID of the dedicated PrivateEndpoint subnet in hub"
-  value       = azurerm_subnet.private_endpoint.id
-}
-
-output "acr_private_endpoint_id" {
-  description = "ID of the ACR private endpoint"
-  value       = azurerm_private_endpoint.acr_pe.id
-}
-
+# Re-export only the outputs that spokes (DEV/UAT/PROD) actually need
 output "acr_registry_dns_zone_name" {
-  description = "Name of the ACR registry Private DNS Zone (for spoke links)"
-  value       = azurerm_private_dns_zone.acr.name  # Assuming your existing zone is azurerm_private_dns_zone.acr
+  value       = module.shared.acr_registry_dns_zone_name
+  description = "Name of the ACR registry Private DNS Zone (used by spokes for VNet links)"
 }
 
 output "acr_data_dns_zone_name" {
-  description = "Name of the ACR data Private DNS Zone (for spoke links)"
-  value       = azurerm_private_dns_zone.acr_data.name
+  value       = module.shared.acr_data_dns_zone_name
+  description = "Name of the ACR data Private DNS Zone (used by spokes for VNet links)"
 }
 
+# Optional – only if spokes need ACR ID directly (rare)
 output "acr_id" {
-  description = "ID of the shared ACR (if not already output)"
-  value       = azurerm_container_registry.acr.id
+  value       = module.shared.acr_id
+  description = "ID of the shared ACR (optional for spokes)"
 }
-
 
 
 #Hub-to-spoke peering (created in Shared folder after spokes exist)

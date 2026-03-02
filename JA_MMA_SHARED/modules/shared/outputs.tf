@@ -48,3 +48,22 @@ output "frontdoor_profile_id" {
 output "rg_name" {
   value = azurerm_resource_group.shared.name
 }
+
+# Add these at the end of modules/shared/outputs.tf
+
+output "acr_registry_dns_zone_name" {
+  description = "Name of the ACR registry Private DNS Zone (used by spokes)"
+  value       = azurerm_private_dns_zone.acr.name  # Adjust resource name if different
+}
+
+output "acr_data_dns_zone_name" {
+  description = "Name of the ACR data Private DNS Zone (used by spokes)"
+  value       = azurerm_private_dns_zone.acr_data.name
+}
+
+# Optional — only add if spokes need ACR ID directly (rare)
+output "acr_id" {
+  description = "ID of the shared ACR (optional)"
+  value       = azurerm_container_registry.acr.id
+}
+
