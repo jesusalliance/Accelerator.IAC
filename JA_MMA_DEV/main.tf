@@ -74,7 +74,7 @@ module "dev" {
 
 # Spoke-to-hub peering for DEV
 resource "azurerm_virtual_network_peering" "dev_to_hub" {
-  name                         = "peer-dev-to-hub"
+  name                         = "peering-dev-to-hub-link"
   resource_group_name          = module.dev.rg_name
   virtual_network_name         = "vnet-ja-mma-dev"
   remote_virtual_network_id    = data.terraform_remote_state.shared.outputs.shared_hub_vnet_id
