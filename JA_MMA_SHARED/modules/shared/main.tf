@@ -92,7 +92,7 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
 
     rule {
       name             = "https-outbound"
-      source_addresses = ["0.0.0.0/0"]
+      source_addresses = ["*"]
 
       protocols {
         type = "Https"
@@ -100,7 +100,8 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
       }
 
       destination_fqdns = [
-        "*.azure.com",
+        "*.google.com",
+	"*.azure.com",
         "*.microsoft.com",
         "mcr.microsoft.com",
         "login.microsoftonline.com"
