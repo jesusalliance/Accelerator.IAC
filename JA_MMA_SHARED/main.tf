@@ -122,14 +122,6 @@ output "acr_id" {
   description = "ID of the shared ACR (optional for spokes)"
 }
 
-# Grants AcrPull to the shared GitHub CI identity so Container Apps in DEV/UAT/PROD can pull images
-
-resource "azurerm_role_assignment" "container_apps_acr_pull" {
-  scope                = azurerm_container_registry.acr.id   # ← Change if your ACR resource has a different name (e.g., .acr_ja.id)
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id   # ← Change if the identity resource is named differently (search code for "id-ja-github-ci")
-}
-
 #Hub-to-spoke peering (created in Shared folder after spokes exist)
  resource "azurerm_virtual_network_peering" "hub-to-dev" {
   name                         = "peering-hub-to-dev-link"

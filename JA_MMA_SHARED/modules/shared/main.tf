@@ -300,3 +300,12 @@ resource "azurerm_cdn_frontdoor_security_policy" "ja" {
     }
   }
 }
+
+
+# Grants AcrPull to the GitHub CI identity so Container Apps in spoke envs can pull images
+
+resource "azurerm_role_assignment" "container_apps_acr_pull" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+}
