@@ -157,5 +157,5 @@ output "acr_id" {
 #  allow_forwarded_traffic      = true
 #  allow_gateway_transit        = false
 #  use_remote_gateways          = false
-#  depends_on = [data.terraform_remote_state.dev]  # for hub_to_prod
+#  depends_on = [data.terraform_remote_state.prod]  # for hub_to_prod
 #}
