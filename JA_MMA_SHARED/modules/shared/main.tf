@@ -91,20 +91,30 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
     action   = "Allow"
 
     rule {
-      name             = "https-outbound"
+      name             = "https-http-outbound"
       source_addresses = ["*"]
 
       protocols {
         type = "Https"
         port = 443
       }
+      protocols {
+        type = "Http"
+        port = 80
+      }
+
 
       destination_fqdns = [
-        "*.google.com",
+	"*.docker.com", 
+	"*.ubuntu.com",       
+	"*.google.com",
 	"*.azure.com",
         "*.microsoft.com",
+	"*.windows.net",
         "mcr.microsoft.com",
-        "login.microsoftonline.com"
+        "login.microsoftonline.com",
+	"secure.aadcdn.microsoftonline-p.com",
+	"oss.sonatype.org"
       ]
     }
   }

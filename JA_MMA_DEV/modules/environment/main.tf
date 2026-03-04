@@ -222,7 +222,20 @@ resource "azurerm_container_app_environment" "cae" {
   internal_load_balancer_enabled = (var.ingress_type == "front_door")
   log_analytics_workspace_id     = var.log_analytics_id
   tags                           = var.tags
+
+  # Required to stop replacement loop + satisfy provider validation
+  infrastructure_resource_group_name = "ME_cae-ja-mma-${var.environment}_rg-ja-mma-${var.environment}_${var.location}"
+
+  # Add this block (this is the missing piece)
+  workload_profile {
+    name = "Consumption"   # Default profile for most Container Apps envs
+    workload_profile_type = "Consumption"
+    minimum_count         = 0
+    maximum_count         = 0   # 0 = unlimited (Azure auto-scales)
+  }
 }
+
+
 
 resource "azurerm_container_app" "frontend" {
   name                         = "frontend-${var.environment}"

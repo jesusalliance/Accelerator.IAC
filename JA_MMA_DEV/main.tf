@@ -32,7 +32,6 @@ provider "azurerm" {
 }
 
 
-
 module "dev" {
   source = "./modules/environment"
 

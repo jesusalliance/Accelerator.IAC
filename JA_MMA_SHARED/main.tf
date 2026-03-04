@@ -61,6 +61,7 @@ output "shared_firewall_private_ip" {
   description = "Azure Firewall private IP for UDR next-hop in spokes"
 }
 
+
 output "shared_hub_vnet_id" {
   value       = module.shared.hub_vnet_id
   description = "Hub VNet ID for bidirectional peering from spokes"

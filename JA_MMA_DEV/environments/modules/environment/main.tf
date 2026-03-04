@@ -1,5 +1,11 @@
 # modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + ingress traffic_weight + CORRECT FQDN reference)
 
+# Reference the shared GitHub CI identity (has AcrPull for image pulls)
+data "azurerm_user_assigned_identity" "acr_pull" {
+  name                = "id-ja-github-ci"
+  resource_group_name = "rg-ja-shared"
+}
+
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
   location = var.location
@@ -257,12 +263,13 @@ resource "azurerm_container_app" "frontend" {
   tags = var.tags
 
   identity {
-    type = "SystemAssigned"
+  type         = "UserAssigned"
+  identity_ids = [data.azurerm_user_assigned_identity.acr_pull.id]
   }
 
   registry {
-    server   = var.acr_login_server
-    identity = "System"
+  server   = "jamacrs20260224.azurecr.io"
+  identity = data.azurerm_user_assigned_identity.acr_pull.id
   }
 }
 
@@ -288,13 +295,14 @@ resource "azurerm_container_app" "backend" {
 
   tags = var.tags
 
-  identity {
-    type = "SystemAssigned"
+    identity {
+  type         = "UserAssigned"
+  identity_ids = [data.azurerm_user_assigned_identity.acr_pull.id]
   }
 
   registry {
-    server   = var.acr_login_server
-    identity = "System"
+  server   = "jamacrs20260224.azurecr.io"
+  identity = data.azurerm_user_assigned_identity.acr_pull.id
   }
 }
 
