@@ -186,49 +186,57 @@ resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
   registration_enabled  = false
 }
 
+
 module "documentdb_mongo_cluster" {
   source  = "Azure/avm-res-documentdb-mongocluster/azurerm"
-  version = "0.1.0"    # Check registry for latest version
+  version = "0.1.0"  # Pin to latest stable if you upgrade (check registry for 0.x updates)
 
-}
+  # Required inputs
+  name                = "ja-mma-mongo-cluster"
+  resource_group_name = "rg-ja-mma-dev"
+  location            = "centralus"
 
-  # Required
-  name                = "ja-mma-mongo-cluster"          # Unique cluster name
-  resource_group_name = "rg-ja-mma-dev"                # Match your PROD RG or appropriate env
-  location            = "centralus"                     # Or your preferred region
+  administrator_login         = "etrivette"  # Must start with letter; alphanumeric + - _
+  administrator_login_password = "P@ssword1@#&$!~"  # <-- Use a variable! (sensitive = true)
 
-  # Cluster configuration (vCore-based)
-  administrator = {
-    username = "etrivette"
-    password = "P@ssword1@#"  # Use a secret manager / variable / Key Vault reference
+  # Cluster / compute config (vCore-based)
+  compute_tier    = "M10"          # Recommended for dev/prod; alternatives: M10/M20 (burstable, cheaper but limited), M40+, M50, etc.
+  shard_count     = 1              # 1 for dev; scale to 2+ later for horizontal sharding
+  storage_size_gb = 32             # 32–128 GiB common for dev; supports bursting up to 512 GiB free
+
+  # High availability (cost-optimized for dev: "Disabled" or "SameZone")
+  ha_mode = "Disabled"             # "Disabled" to minimize cost; "SameZone" for basic HA without zone redundancy
+
+  # Private endpoint + VNet integration (preferred over public access)
+  private_endpoints = {
+    primary = {  # Key can be anything descriptive, e.g., "primary" or "main"
+      subnet_resource_id = "/subscriptions/<your-subscription-id>/resourceGroups/rg-ja-mma-dev/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-dev/subnets/snet-db"
+
+      # Associate with your private DNS zone (for privatelink.mongo.cosmos.azure.com resolution)
+      private_dns_zone_resource_ids = [
+        "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongo.cosmos.azure.com"
+      ]
+
+      # Optional extras if needed (e.g., custom name, tags on the PE)
+      # name = "pe-ja-mma-mongo"
+      # tags = { ... }
+    }
   }
 
+  # Optional: Let the module manage DNS zone group association (default true; set false if managing externally via policy/Azure DNS)
+  # private_endpoints_manage_dns_zone_group = true
 
-  # Node configuration (scale vertically by choosing higher tier, horizontally by shards)
-  node {
-    tier       = "Free tier"          # Examples: M10, M20, M30, M40, M50, M60, M80, M200 (maps to vCores + RAM)
-    disk_size  = 32            # GiB per node (independent of compute)
-    shard_count = 1             # Start with 1; scale out to 2–32+ for horizontal
-  }
-
-  # Optional: High availability & geo-distribution
-  high_availability_mode = "SameZone"  # Or "SameZone" for cost-optimized
-  # geo_redundant_backup   = false           # Enable if needed
-
-  # Networking – integrate with your hub-spoke + private endpoint
-  delegated_subnet_resource_id = "/subscriptions/<sub-id>/resourceGroups/rg-ja-mma-prod/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-prod/subnets/snet-db"  # Your DB subnet (e.g., 10.30.3.0/24 in PROD)
-  private_dns_zone_resource_id = "/subscriptions/<sub-id>/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongo.cosmos.azure.com"  # Or appropriate zone
-
-  # Tags to match your design
+  # Tags (updated to match your dev env; adjust as needed)
   tags = {
-    environment = "prod"
-    cost-center = "ja-mma-portal"
-    owner       = "ja-portal-team"
+    environment   = "dev"           # Changed from "prod" since this is dev RG
+    cost-center   = "ja-mma-portal"
+    owner         = "ja-portal-team"
     backup-enabled = "true"
     backup-policy  = "daily"
   }
 
-  # Other options: backups, monitoring, customer-managed keys, etc.
+  # Optional: Enable telemetry (AVM default; set false if you don't want Microsoft to collect usage data)
+  # enable_telemetry = true
 }
 
 resource "azurerm_container_app_environment" "cae" {
