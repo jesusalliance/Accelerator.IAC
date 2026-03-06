@@ -61,8 +61,8 @@ module "dev" {
   key_vault_id              = data.terraform_remote_state.shared.outputs.shared_key_vault_id
   acr_id                    = data.terraform_remote_state.shared.outputs.shared_acr_id
   frontdoor_id              = data.terraform_remote_state.shared.outputs.shared_frontdoor_id
-  shared_documentdb_dns_zone_id    = data.terraform_remote_state.shared.outputs.documentdb_private_dns_zone_id
-  shared_documentdb_dns_zone_name  = data.terraform_remote_state.shared.outputs.documentdb_private_dns_zone_name
+  shared_documentdb_dns_zone_id    = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_id
+  shared_documentdb_dns_zone_name  = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_name
   shared_rg_name            = data.terraform_remote_state.shared.outputs.shared_rg_name
 
   tags = {

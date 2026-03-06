@@ -63,12 +63,12 @@ output "acr_id" {
   value       = azurerm_container_registry.acr.id
 }
 
-output "documentdb_private_dns_zone_id" {
+output "shared_documentdb_private_dns_zone_id" {
   description = "ID of the private DNS zone for DocumentDB vCore (mongocluster)"
   value       = azurerm_private_dns_zone.documentdb_vcore.id  # ← Remove _zone suffix
 }
 
-output "documentdb_private_dns_zone_name" {
+output "shared_documentdb_private_dns_zone_name" {
   description = "Name of the private DNS zone for DocumentDB vCore (mongocluster)"
   value       = azurerm_private_dns_zone.documentdb_vcore.name  # ← Same fix
 }
