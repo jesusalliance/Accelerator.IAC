@@ -208,18 +208,21 @@ module "documentdb_mongo_cluster" {
   ha_mode = "Disabled"             # "Disabled" to minimize cost; "SameZone" for basic HA without zone redundancy
 
   # Private endpoint + VNet integration (preferred over public access)
-  private_endpoints = {
-    primary = {  # Key can be anything descriptive, e.g., "primary" or "main"
-      subnet_resource_id = "/subscriptions/<your-subscription-id>/resourceGroups/rg-ja-mma-dev/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-dev/subnets/snet-db"
+public_network_access = "Disabled"  # ← Ensure this is set (default is Disabled, but be explicit)  
 
-      # Associate with your private DNS zone (for privatelink.mongo.cosmos.azure.com resolution)
+private_endpoints = {
+    dev-primary = {   # Key name can be anything; "primary" or "dev-primary" works
+      name                = "pe-ja-mma-mongo-dev"  # Matches your error's attempted name
+      subnet_resource_id  = "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-mma-dev/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-dev/subnets/snet-db-dev"  # Your DEV DB subnet (10.10.2.0/24)
+
+      private_dns_zone_group_name = "default"  # Or "ja-mma-dns-group"
+
       private_dns_zone_resource_ids = [
-        "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongo.cosmos.azure.com"
-      ]
+        "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongocluster.cosmos.azure.com"
+      ]  # ← Critical: Use the DocumentDB vCore-specific zone (not .mongo.)
 
-      # Optional extras if needed (e.g., custom name, tags on the PE)
-      # name = "pe-ja-mma-mongo"
-      # tags = { ... }
+      # Optional: If you want stricter NSG or tags
+      # tags = { environment = "dev", cost-center = "ja-mma-portal" }
     }
   }
 
@@ -228,15 +231,14 @@ module "documentdb_mongo_cluster" {
 
   # Tags (updated to match your dev env; adjust as needed)
   tags = {
-    environment   = "dev"           # Changed from "prod" since this is dev RG
+    environment   = "dev"           
     cost-center   = "ja-mma-portal"
     owner         = "ja-portal-team"
     backup-enabled = "true"
     backup-policy  = "daily"
   }
 
-  # Optional: Enable telemetry (AVM default; set false if you don't want Microsoft to collect usage data)
-  # enable_telemetry = true
+  enable_telemetry = false
 }
 
 resource "azurerm_container_app_environment" "cae" {
