@@ -200,6 +200,21 @@ resource "azurerm_private_dns_zone" "acr_data" {
   tags                = var.tags
 }
 
+resource "azurerm_private_dns_zone" "documentdb_vcore" {
+  name                = "privatelink.mongocluster.cosmos.azure.com"
+  resource_group_name = azurerm_resource_group.shared.name  # rg-ja-shared
+  tags                = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "documentdb_vcore_hub" {
+  name                  = "link-hub-documentdb-vcore"
+  resource_group_name   = azurerm_resource_group.shared.name
+  private_dns_zone_name = azurerm_private_dns_zone.documentdb_vcore.name
+  virtual_network_id    = azurerm_virtual_network.hub.id  # vnet-ja-hub
+  registration_enabled  = false
+  tags                  = var.tags
+}
+
 # DNS links to HUB only
 resource "azurerm_private_dns_zone_virtual_network_link" "acr_hub" {
   name                  = "link-hub-to-acr"

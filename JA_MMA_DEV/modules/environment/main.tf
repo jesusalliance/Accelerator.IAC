@@ -70,15 +70,14 @@ resource "azurerm_subnet" "private_app" {
 
 
 resource "azurerm_subnet" "db" {
-  name                 = "snet-db"  # or your exact name
-  resource_group_name  = azurerm_resource_group.env.name  # or "rg-ja-mma-dev"
+  name                 = "snet-db"  # Confirm this matches your design: 10.10.2.0/24 for DEV
+  resource_group_name  = azurerm_resource_group.env.name  # rg-ja-mma-dev
   virtual_network_name = azurerm_virtual_network.spoke.name  # vnet-ja-mma-dev
   address_prefixes     = ["10.10.2.0/24"]
 
-  private_endpoint_network_policies = "Disabled"  # ← Use this
+  private_endpoint_network_policies = "Disabled"  # ← This line fixes the error and enables private endpoint
 
-  # Optional: If you need to allow NSGs/UDRs still (per design, UDR applies to DB subnet)
-  # private_endpoint_network_policies = "NetworkSecurityGroupEnabled"  # or "RouteTableEnabled" if needed
+  # Other existing args (delegation if any, service_endpoints, etc.) remain unchanged
 }
 
 resource "azurerm_subnet" "management" {
