@@ -314,7 +314,8 @@ resource "azurerm_role_assignment" "container_apps_acr_pull" {
   principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
 }
 
-# New Private DNS Zone for DocumentDB vCore (MongoDB cluster)
+
+# Add for DocumentDB vCore (MongoDB cluster) private resolution
 resource "azurerm_private_dns_zone" "documentdb_vcore" {
   name                = "privatelink.mongocluster.cosmos.azure.com"
   resource_group_name = azurerm_resource_group.shared.name
