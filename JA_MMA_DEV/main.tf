@@ -31,6 +31,12 @@ provider "azurerm" {
   features {}
 }
 
+# Option B: Fetch the DocumentDB vCore private DNS zone directly (bypasses shared outputs issue)
+data "azurerm_private_dns_zone" "documentdb_vcore" {
+  name                = "privatelink.mongocluster.cosmos.azure.com"
+  resource_group_name = "rg-ja-shared"
+}
+
 
 module "dev" {
   source = "./modules/environment"
@@ -61,8 +67,12 @@ module "dev" {
   key_vault_id              = data.terraform_remote_state.shared.outputs.shared_key_vault_id
   acr_id                    = data.terraform_remote_state.shared.outputs.shared_acr_id
   frontdoor_id              = data.terraform_remote_state.shared.outputs.shared_frontdoor_id
-  shared_documentdb_dns_zone_id    = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_id
-  shared_documentdb_dns_zone_name  = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_name
+  #shared_documentdb_dns_zone_id    = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_id
+  #shared_documentdb_dns_zone_name  = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_name
+  
+
+  shared_documentdb_dns_zone_id   = data.azurerm_private_dns_zone.documentdb_vcore.id
+  shared_documentdb_dns_zone_name = data.azurerm_private_dns_zone.documentdb_vcore.name
   shared_rg_name            = data.terraform_remote_state.shared.outputs.shared_rg_name
 
   tags = {
