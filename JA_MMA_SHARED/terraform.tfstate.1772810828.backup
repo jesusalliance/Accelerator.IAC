@@ -1,0 +1,1363 @@
+{
+  "version": 4,
+  "terraform_version": "1.14.5",
+  "serial": 78,
+  "lineage": "716b657b-f4f0-1baa-8c8e-84973a6f4877",
+  "outputs": {
+    "acr_data_dns_zone_name": {
+      "value": "privatelink.centralus.data.azurecr.io",
+      "type": "string"
+    },
+    "acr_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.ContainerRegistry/registries/jamacrs20260224",
+      "type": "string"
+    },
+    "acr_registry_dns_zone_name": {
+      "value": "privatelink.azurecr.io",
+      "type": "string"
+    },
+    "hub_firewall_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/azureFirewalls/fw-ja-hub",
+      "type": "string"
+    },
+    "shared_acr_dns_zone_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.azurecr.io",
+      "type": "string"
+    },
+    "shared_acr_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.ContainerRegistry/registries/jamacrs20260224",
+      "type": "string"
+    },
+    "shared_acr_login_server": {
+      "value": "jamacrs20260224.azurecr.io",
+      "type": "string"
+    },
+    "shared_cosmos_dns_zone_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongo.cosmos.azure.com",
+      "type": "string"
+    },
+    "shared_firewall_private_ip": {
+      "value": "10.40.1.4",
+      "type": "string"
+    },
+    "shared_frontdoor_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Cdn/profiles/fd-ja-mma",
+      "type": "string"
+    },
+    "shared_github_ci_principal_id": {
+      "value": "4020389e-2ef8-417e-9f39-f6d58a179c33",
+      "type": "string"
+    },
+    "shared_hub_vnet_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub",
+      "type": "string"
+    },
+    "shared_key_vault_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.KeyVault/vaults/kv-ja-shared",
+      "type": "string"
+    },
+    "shared_log_analytics_id": {
+      "value": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.OperationalInsights/workspaces/log-ja-shared",
+      "type": "string"
+    },
+    "shared_rg_name": {
+      "value": "rg-ja-shared",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "data",
+      "type": "terraform_remote_state",
+      "name": "dev",
+      "provider": "provider[\"terraform.io/builtin/terraform\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "backend": "local",
+            "config": {
+              "value": {
+                "path": "..//JA_MMA_DEV//terraform.tfstate"
+              },
+              "type": [
+                "object",
+                {
+                  "path": "string"
+                }
+              ]
+            },
+            "defaults": null,
+            "outputs": {
+              "value": {
+                "dev_rg_name": "rg-ja-mma-dev",
+                "dev_vnet_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-mma-dev/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-dev"
+              },
+              "type": [
+                "object",
+                {
+                  "dev_rg_name": "string",
+                  "dev_vnet_id": "string"
+                }
+              ]
+            },
+            "workspace": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "data",
+      "type": "azurerm_client_config",
+      "name": "current",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "client_id": "04b07795-8ddb-461a-bbee-02f9e1bf7b46",
+            "id": "Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9ZmVhOGQxYzMtZjc3Yi00ZTFiLTgwODQtMDk3YTYyY2U1NDQ3O3N1YnNjcmlwdGlvbklkPTVhNzYyOTkwLWY3MTAtNDRmOC04MDI3LTFiYjIwZmIzY2Y2MDt0ZW5hbnRJZD05YjcwNWUwYy00MjliLTRmNjgtYWZjMy1mYmE5YTI2ZDU0YjQ=",
+            "object_id": "fea8d1c3-f77b-4e1b-8084-097a62ce5447",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60",
+            "tenant_id": "9b705e0c-429b-4f68-afc3-fba9a26d54b4",
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_cdn_frontdoor_endpoint",
+      "name": "ja",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cdn_frontdoor_profile_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Cdn/profiles/fd-ja-mma",
+            "enabled": true,
+            "host_name": "ep-ja-mma-cve2ejhtajccbmbg.z03.azurefd.net",
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Cdn/profiles/fd-ja-mma/afdEndpoints/ep-ja-mma",
+            "name": "ep-ja-mma",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_cdn_frontdoor_profile.ja",
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_cdn_frontdoor_firewall_policy",
+      "name": "ja",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "captcha_cookie_expiration_in_minutes": null,
+            "custom_block_response_body": "",
+            "custom_block_response_status_code": 0,
+            "custom_rule": [
+              {
+                "action": "Block",
+                "enabled": true,
+                "match_condition": [
+                  {
+                    "match_values": [
+                      "bot",
+                      "crawler",
+                      "spider"
+                    ],
+                    "match_variable": "RequestHeader",
+                    "negation_condition": false,
+                    "operator": "Contains",
+                    "selector": "User-Agent",
+                    "transforms": [
+                      "Lowercase"
+                    ]
+                  }
+                ],
+                "name": "BlockBadBots",
+                "priority": 1,
+                "rate_limit_duration_in_minutes": 1,
+                "rate_limit_threshold": 10,
+                "type": "MatchRule"
+              }
+            ],
+            "enabled": true,
+            "frontend_endpoint_ids": [],
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/frontDoorWebApplicationFirewallPolicies/jammawafpolicy",
+            "js_challenge_cookie_expiration_in_minutes": null,
+            "log_scrubbing": [],
+            "managed_rule": [],
+            "mode": "Prevention",
+            "name": "jammawafpolicy",
+            "redirect_url": "",
+            "request_body_check_enabled": true,
+            "resource_group_name": "rg-ja-shared",
+            "sku_name": "Standard_AzureFrontDoor",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_cdn_frontdoor_profile.ja",
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_cdn_frontdoor_profile",
+      "name": "ja",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Cdn/profiles/fd-ja-mma",
+            "identity": [],
+            "log_scrubbing_rule": [],
+            "name": "fd-ja-mma",
+            "resource_group_name": "rg-ja-shared",
+            "resource_guid": "41400799-19fe-400e-9303-9ced26603fa5",
+            "response_timeout_seconds": 120,
+            "sku_name": "Standard_AzureFrontDoor",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_cdn_frontdoor_security_policy",
+      "name": "ja",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "cdn_frontdoor_profile_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Cdn/profiles/fd-ja-mma",
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Cdn/profiles/fd-ja-mma/securityPolicies/secpol-ja-mma",
+            "name": "secpol-ja-mma",
+            "security_policies": [
+              {
+                "firewall": [
+                  {
+                    "association": [
+                      {
+                        "domain": [
+                          {
+                            "active": true,
+                            "cdn_frontdoor_domain_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Cdn/profiles/fd-ja-mma/afdEndpoints/ep-ja-mma"
+                          }
+                        ],
+                        "patterns_to_match": [
+                          "/*"
+                        ]
+                      }
+                    ],
+                    "cdn_frontdoor_firewall_policy_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/frontDoorWebApplicationFirewallPolicies/jammawafpolicy"
+                  }
+                ]
+              }
+            ],
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_cdn_frontdoor_endpoint.ja",
+            "module.shared.azurerm_cdn_frontdoor_firewall_policy.ja",
+            "module.shared.azurerm_cdn_frontdoor_profile.ja",
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_container_registry",
+      "name": "acr",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 2,
+          "attributes": {
+            "admin_enabled": false,
+            "admin_password": "",
+            "admin_username": "",
+            "anonymous_pull_enabled": false,
+            "data_endpoint_enabled": false,
+            "data_endpoint_host_names": [
+              "jamacrs20260224.centralus.data.azurecr.io"
+            ],
+            "encryption": [],
+            "export_policy_enabled": true,
+            "georeplications": [],
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.ContainerRegistry/registries/jamacrs20260224",
+            "identity": [],
+            "location": "centralus",
+            "login_server": "jamacrs20260224.azurecr.io",
+            "name": "jamacrs20260224",
+            "network_rule_bypass_option": "AzureServices",
+            "network_rule_set": [
+              {
+                "default_action": "Allow",
+                "ip_rule": [
+                  {
+                    "action": "Allow",
+                    "ip_range": "104.176.84.255/32"
+                  }
+                ]
+              }
+            ],
+            "public_network_access_enabled": true,
+            "quarantine_policy_enabled": false,
+            "resource_group_name": "rg-ja-shared",
+            "retention_policy_in_days": 0,
+            "sku": "Premium",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null,
+            "trust_policy_enabled": false,
+            "zone_redundancy_enabled": true
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "admin_password"
+              }
+            ]
+          ],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIyIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_federated_identity_credential",
+      "name": "github_ci_credential",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "audience": [
+              "api://AzureADTokenExchange"
+            ],
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-ja-github-ci/federatedIdentityCredentials/github-ci-federated",
+            "issuer": "https://token.actions.githubusercontent.com",
+            "name": "github-ci-federated",
+            "parent_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-ja-github-ci",
+            "resource_group_name": "rg-ja-shared",
+            "subject": "repo:jesusalliance/Accelerator.IAC:ref:refs/heads/main",
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.azurerm_user_assigned_identity.github_ci"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_firewall_policy",
+      "name": "hub",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "auto_learn_private_ranges_enabled": false,
+            "base_policy_id": "",
+            "child_policies": [],
+            "dns": [
+              {
+                "proxy_enabled": true,
+                "servers": []
+              }
+            ],
+            "explicit_proxy": [],
+            "firewalls": [
+              "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/azureFirewalls/fw-ja-hub"
+            ],
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/firewallPolicies/fwpolicy-ja-hub",
+            "identity": [],
+            "insights": [],
+            "intrusion_detection": [],
+            "location": "centralus",
+            "name": "fwpolicy-ja-hub",
+            "private_ip_ranges": [],
+            "resource_group_name": "rg-ja-shared",
+            "rule_collection_groups": [
+              "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/firewallPolicies/fwpolicy-ja-hub/ruleCollectionGroups/egress-rules",
+              "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/firewallPolicies/fwpolicy-ja-hub/ruleCollectionGroups/DefaultApplicationRuleCollectionGroup",
+              "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/firewallPolicies/fwpolicy-ja-hub/ruleCollectionGroups/DefaultNetworkRuleCollectionGroup"
+            ],
+            "sku": "Standard",
+            "sql_redirect_allowed": null,
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "threat_intelligence_allowlist": [],
+            "threat_intelligence_mode": "Alert",
+            "timeouts": null,
+            "tls_certificate": []
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "fwpolicy-ja-hub",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_firewall_policy_rule_collection_group",
+      "name": "egress",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "application_rule_collection": [
+              {
+                "action": "Allow",
+                "name": "allow-https",
+                "priority": 100,
+                "rule": [
+                  {
+                    "description": "",
+                    "destination_addresses": [],
+                    "destination_fqdn_tags": [],
+                    "destination_fqdns": [
+                      "*.alpinelinux.org",
+                      "*.docker.com",
+                      "*.ubuntu.com",
+                      "*.google.com",
+                      "*.azure.com",
+                      "*.microsoft.com",
+                      "*.windows.net",
+                      "mcr.microsoft.com",
+                      "login.microsoftonline.com",
+                      "secure.aadcdn.microsoftonline-p.com",
+                      "oss.sonatype.org"
+                    ],
+                    "destination_urls": [],
+                    "http_headers": [],
+                    "name": "https-http-outbound",
+                    "protocols": [
+                      {
+                        "port": 443,
+                        "type": "Https"
+                      },
+                      {
+                        "port": 80,
+                        "type": "Http"
+                      }
+                    ],
+                    "source_addresses": [
+                      "*"
+                    ],
+                    "source_ip_groups": [],
+                    "terminate_tls": false,
+                    "web_categories": []
+                  }
+                ]
+              }
+            ],
+            "firewall_policy_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/firewallPolicies/fwpolicy-ja-hub",
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/firewallPolicies/fwpolicy-ja-hub/ruleCollectionGroups/egress-rules",
+            "name": "egress-rules",
+            "nat_rule_collection": [],
+            "network_rule_collection": [],
+            "priority": 100,
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "firewall_policy_name": "fwpolicy-ja-hub",
+            "name": "egress-rules",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_firewall_policy.hub",
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_key_vault",
+      "name": "kv",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 2,
+          "attributes": {
+            "access_policy": [],
+            "contact": [],
+            "enable_rbac_authorization": true,
+            "enabled_for_deployment": false,
+            "enabled_for_disk_encryption": false,
+            "enabled_for_template_deployment": false,
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.KeyVault/vaults/kv-ja-shared",
+            "location": "centralus",
+            "name": "kv-ja-shared",
+            "network_acls": [
+              {
+                "bypass": "AzureServices",
+                "default_action": "Allow",
+                "ip_rules": [],
+                "virtual_network_subnet_ids": []
+              }
+            ],
+            "public_network_access_enabled": true,
+            "purge_protection_enabled": true,
+            "rbac_authorization_enabled": true,
+            "resource_group_name": "rg-ja-shared",
+            "sku_name": "standard",
+            "soft_delete_retention_days": 90,
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "tenant_id": "9b705e0c-429b-4f68-afc3-fba9a26d54b4",
+            "timeouts": null,
+            "vault_uri": "https://kv-ja-shared.vault.azure.net/"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIyIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.data.azurerm_client_config.current"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_log_analytics_workspace",
+      "name": "logs",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 3,
+          "attributes": {
+            "allow_resource_only_permissions": true,
+            "cmk_for_query_forced": false,
+            "daily_quota_gb": -1,
+            "data_collection_rule_id": "",
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.OperationalInsights/workspaces/log-ja-shared",
+            "identity": [],
+            "immediate_data_purge_on_30_days_enabled": false,
+            "internet_ingestion_enabled": true,
+            "internet_query_enabled": true,
+            "local_authentication_disabled": false,
+            "local_authentication_enabled": true,
+            "location": "centralus",
+            "name": "log-ja-shared",
+            "primary_shared_key": "C+SjXRNgFfLm02TVWpd9aiUNKrOwYUezkS9PBtLoHJlRJ9kNIdCHM/y/zyIogxERer1KiNmD9cMhQUiGhRpyQg==",
+            "reservation_capacity_in_gb_per_day": null,
+            "resource_group_name": "rg-ja-shared",
+            "retention_in_days": 90,
+            "secondary_shared_key": "UtcronYWMr15KYiw3Rw138+umNSNMklh2XbjQ9p01XyVxdFmO15UMKq/Yuo2JthAoibqmbc2lNdHbsZLHHkt7g==",
+            "sku": "PerGB2018",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null,
+            "workspace_id": "1422c8a2-0d4c-43d5-af9c-3545cbf6a19e"
+          },
+          "sensitive_attributes": [
+            [
+              {
+                "type": "get_attr",
+                "value": "primary_shared_key"
+              }
+            ],
+            [
+              {
+                "type": "get_attr",
+                "value": "secondary_shared_key"
+              }
+            ]
+          ],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIzIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_dns_zone",
+      "name": "acr",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.azurecr.io",
+            "max_number_of_record_sets": 25000,
+            "max_number_of_virtual_network_links": 1000,
+            "max_number_of_virtual_network_links_with_registration": 100,
+            "name": "privatelink.azurecr.io",
+            "number_of_record_sets": 3,
+            "resource_group_name": "rg-ja-shared",
+            "soa_record": [
+              {
+                "email": "azureprivatedns-host.microsoft.com",
+                "expire_time": 2419200,
+                "fqdn": "privatelink.azurecr.io.",
+                "host_name": "azureprivatedns.net",
+                "minimum_ttl": 10,
+                "refresh_time": 3600,
+                "retry_time": 300,
+                "serial_number": 1,
+                "tags": {},
+                "ttl": 3600
+              }
+            ],
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "privatelink.azurecr.io",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_dns_zone",
+      "name": "acr_data",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.centralus.data.azurecr.io",
+            "max_number_of_record_sets": 25000,
+            "max_number_of_virtual_network_links": 1000,
+            "max_number_of_virtual_network_links_with_registration": 100,
+            "name": "privatelink.centralus.data.azurecr.io",
+            "number_of_record_sets": 2,
+            "resource_group_name": "rg-ja-shared",
+            "soa_record": [
+              {
+                "email": "azureprivatedns-host.microsoft.com",
+                "expire_time": 2419200,
+                "fqdn": "privatelink.centralus.data.azurecr.io.",
+                "host_name": "azureprivatedns.net",
+                "minimum_ttl": 10,
+                "refresh_time": 3600,
+                "retry_time": 300,
+                "serial_number": 1,
+                "tags": {},
+                "ttl": 3600
+              }
+            ],
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "privatelink.centralus.data.azurecr.io",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_dns_zone",
+      "name": "cosmos_mongo",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongo.cosmos.azure.com",
+            "max_number_of_record_sets": 25000,
+            "max_number_of_virtual_network_links": 1000,
+            "max_number_of_virtual_network_links_with_registration": 100,
+            "name": "privatelink.mongo.cosmos.azure.com",
+            "number_of_record_sets": 1,
+            "resource_group_name": "rg-ja-shared",
+            "soa_record": [
+              {
+                "email": "azureprivatedns-host.microsoft.com",
+                "expire_time": 2419200,
+                "fqdn": "privatelink.mongo.cosmos.azure.com.",
+                "host_name": "azureprivatedns.net",
+                "minimum_ttl": 10,
+                "refresh_time": 3600,
+                "retry_time": 300,
+                "serial_number": 1,
+                "tags": {},
+                "ttl": 3600
+              }
+            ],
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "privatelink.mongo.cosmos.azure.com",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_dns_zone",
+      "name": "documentdb_vcore",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongocluster.cosmos.azure.com",
+            "max_number_of_record_sets": 25000,
+            "max_number_of_virtual_network_links": 1000,
+            "max_number_of_virtual_network_links_with_registration": 100,
+            "name": "privatelink.mongocluster.cosmos.azure.com",
+            "number_of_record_sets": 1,
+            "resource_group_name": "rg-ja-shared",
+            "soa_record": [
+              {
+                "email": "azureprivatedns-host.microsoft.com",
+                "expire_time": 2419200,
+                "fqdn": "privatelink.mongocluster.cosmos.azure.com.",
+                "host_name": "azureprivatedns.net",
+                "minimum_ttl": 10,
+                "refresh_time": 3600,
+                "retry_time": 300,
+                "serial_number": 1,
+                "tags": {},
+                "ttl": 3600
+              }
+            ],
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "privatelink.mongocluster.cosmos.azure.com",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_dns_zone_virtual_network_link",
+      "name": "acr_data_hub",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.centralus.data.azurecr.io/virtualNetworkLinks/link-hub-to-acr-data",
+            "name": "link-hub-to-acr-data",
+            "private_dns_zone_name": "privatelink.centralus.data.azurecr.io",
+            "registration_enabled": false,
+            "resolution_policy": "Default",
+            "resource_group_name": "rg-ja-shared",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null,
+            "virtual_network_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "link-hub-to-acr-data",
+            "private_dns_zone_name": "privatelink.centralus.data.azurecr.io",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_private_dns_zone.acr_data",
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.azurerm_virtual_network.hub"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_dns_zone_virtual_network_link",
+      "name": "acr_hub",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.azurecr.io/virtualNetworkLinks/link-hub-to-acr",
+            "name": "link-hub-to-acr",
+            "private_dns_zone_name": "privatelink.azurecr.io",
+            "registration_enabled": false,
+            "resolution_policy": "Default",
+            "resource_group_name": "rg-ja-shared",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null,
+            "virtual_network_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "link-hub-to-acr",
+            "private_dns_zone_name": "privatelink.azurecr.io",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_private_dns_zone.acr",
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.azurerm_virtual_network.hub"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_dns_zone_virtual_network_link",
+      "name": "documentdb_vcore_hub",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongocluster.cosmos.azure.com/virtualNetworkLinks/link-hub-documentdb-vcore",
+            "name": "link-hub-documentdb-vcore",
+            "private_dns_zone_name": "privatelink.mongocluster.cosmos.azure.com",
+            "registration_enabled": false,
+            "resolution_policy": "Default",
+            "resource_group_name": "rg-ja-shared",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null,
+            "virtual_network_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "link-hub-documentdb-vcore",
+            "private_dns_zone_name": "privatelink.mongocluster.cosmos.azure.com",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_private_dns_zone.documentdb_vcore",
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.azurerm_virtual_network.hub"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_private_endpoint",
+      "name": "acr_pe",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "custom_dns_configs": [
+              {
+                "fqdn": "jamacrs20260224.centralus.data.azurecr.io",
+                "ip_addresses": [
+                  "10.40.3.4"
+                ]
+              },
+              {
+                "fqdn": "jamacrs20260224.azurecr.io",
+                "ip_addresses": [
+                  "10.40.3.5"
+                ]
+              }
+            ],
+            "custom_network_interface_name": "",
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateEndpoints/pe-acr-shared",
+            "ip_configuration": [],
+            "location": "centralus",
+            "name": "pe-acr-shared",
+            "network_interface": [
+              {
+                "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/networkInterfaces/pe-acr-shared.nic.7034bb5a-38ed-489b-a3f0-82cf0983c756",
+                "name": "pe-acr-shared.nic.7034bb5a-38ed-489b-a3f0-82cf0983c756"
+              }
+            ],
+            "private_dns_zone_configs": [],
+            "private_dns_zone_group": [],
+            "private_service_connection": [
+              {
+                "is_manual_connection": false,
+                "name": "psc-acr",
+                "private_connection_resource_alias": "",
+                "private_connection_resource_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.ContainerRegistry/registries/jamacrs20260224",
+                "private_ip_address": "10.40.3.4",
+                "request_message": "",
+                "subresource_names": [
+                  "registry"
+                ]
+              }
+            ],
+            "resource_group_name": "rg-ja-shared",
+            "subnet_id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub/subnets/PrivateEndpointSubnet",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "pe-acr-shared",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjozNjAwMDAwMDAwMDAwLCJkZWxldGUiOjM2MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_container_registry.acr",
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.azurerm_subnet.private_endpoint",
+            "module.shared.azurerm_virtual_network.hub"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_public_ip",
+      "name": "firewall_pip",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "allocation_method": "Static",
+            "ddos_protection_mode": "VirtualNetworkInherited",
+            "ddos_protection_plan_id": null,
+            "domain_name_label": null,
+            "domain_name_label_scope": null,
+            "edge_zone": "",
+            "fqdn": null,
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/publicIPAddresses/pip-firewall",
+            "idle_timeout_in_minutes": 4,
+            "ip_address": "135.233.122.232",
+            "ip_tags": {},
+            "ip_version": "IPv4",
+            "location": "centralus",
+            "name": "pip-firewall",
+            "public_ip_prefix_id": null,
+            "resource_group_name": "rg-ja-shared",
+            "reverse_fqdn": null,
+            "sku": "Standard",
+            "sku_tier": "Regional",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null,
+            "zones": [
+              "1",
+              "2",
+              "3"
+            ]
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "pip-firewall",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_resource_group",
+      "name": "shared",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared",
+            "location": "centralus",
+            "managed_by": "",
+            "name": "rg-ja-shared",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo1NDAwMDAwMDAwMDAwLCJkZWxldGUiOjU0MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjo1NDAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_subnet",
+      "name": "firewall",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "address_prefixes": [
+              "10.40.1.0/26"
+            ],
+            "default_outbound_access_enabled": true,
+            "delegation": [],
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub/subnets/AzureFirewallSubnet",
+            "ip_address_pool": [],
+            "name": "AzureFirewallSubnet",
+            "private_endpoint_network_policies": "Disabled",
+            "private_link_service_network_policies_enabled": true,
+            "resource_group_name": "rg-ja-shared",
+            "service_endpoint_policy_ids": [],
+            "service_endpoints": [],
+            "sharing_scope": "",
+            "timeouts": null,
+            "virtual_network_name": "vnet-ja-hub"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "AzureFirewallSubnet",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60",
+            "virtual_network_name": "vnet-ja-hub"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.azurerm_virtual_network.hub"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_subnet",
+      "name": "private_endpoint",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "address_prefixes": [
+              "10.40.3.0/24"
+            ],
+            "default_outbound_access_enabled": true,
+            "delegation": [],
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub/subnets/PrivateEndpointSubnet",
+            "ip_address_pool": [],
+            "name": "PrivateEndpointSubnet",
+            "private_endpoint_network_policies": "Enabled",
+            "private_link_service_network_policies_enabled": true,
+            "resource_group_name": "rg-ja-shared",
+            "service_endpoint_policy_ids": [],
+            "service_endpoints": [],
+            "sharing_scope": "",
+            "timeouts": null,
+            "virtual_network_name": "vnet-ja-hub"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "PrivateEndpointSubnet",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60",
+            "virtual_network_name": "vnet-ja-hub"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared",
+            "module.shared.azurerm_virtual_network.hub"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_user_assigned_identity",
+      "name": "github_ci",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "client_id": "bbb716bb-2a4f-4850-9a63-62774801e22c",
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-ja-github-ci",
+            "isolation_scope": "",
+            "location": "centralus",
+            "name": "id-ja-github-ci",
+            "principal_id": "4020389e-2ef8-417e-9f39-f6d58a179c33",
+            "resource_group_name": "rg-ja-shared",
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "tenant_id": "9b705e0c-429b-4f68-afc3-fba9a26d54b4",
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "module.shared",
+      "mode": "managed",
+      "type": "azurerm_virtual_network",
+      "name": "hub",
+      "provider": "provider[\"registry.terraform.io/hashicorp/azurerm\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "address_space": [
+              "10.40.0.0/21"
+            ],
+            "bgp_community": "",
+            "ddos_protection_plan": [],
+            "dns_servers": [],
+            "edge_zone": "",
+            "encryption": [],
+            "flow_timeout_in_minutes": 0,
+            "guid": "99de0982-8f26-48cb-b1f6-1de3eba32fbe",
+            "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub",
+            "ip_address_pool": [],
+            "location": "centralus",
+            "name": "vnet-ja-hub",
+            "private_endpoint_vnet_policies": "Disabled",
+            "resource_group_name": "rg-ja-shared",
+            "subnet": [
+              {
+                "address_prefixes": [
+                  "10.40.1.0/26"
+                ],
+                "default_outbound_access_enabled": true,
+                "delegation": [],
+                "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub/subnets/AzureFirewallSubnet",
+                "name": "AzureFirewallSubnet",
+                "private_endpoint_network_policies": "Disabled",
+                "private_link_service_network_policies_enabled": true,
+                "route_table_id": "",
+                "security_group": "",
+                "service_endpoint_policy_ids": [],
+                "service_endpoints": []
+              },
+              {
+                "address_prefixes": [
+                  "10.40.3.0/24"
+                ],
+                "default_outbound_access_enabled": true,
+                "delegation": [],
+                "id": "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/virtualNetworks/vnet-ja-hub/subnets/PrivateEndpointSubnet",
+                "name": "PrivateEndpointSubnet",
+                "private_endpoint_network_policies": "Enabled",
+                "private_link_service_network_policies_enabled": true,
+                "route_table_id": "",
+                "security_group": "",
+                "service_endpoint_policy_ids": [],
+                "service_endpoints": []
+              }
+            ],
+            "tags": {
+              "environment": "shared",
+              "owner": "ja-portal-team",
+              "project": "ja-mma-portal"
+            },
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "name": "vnet-ja-hub",
+            "resource_group_name": "rg-ja-shared",
+            "subscription_id": "5a762990-f710-44f8-8027-1bb20fb3cf60"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjE4MDAwMDAwMDAwMDAsInJlYWQiOjMwMDAwMDAwMDAwMCwidXBkYXRlIjoxODAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIwIn0=",
+          "dependencies": [
+            "module.shared.azurerm_resource_group.shared"
+          ]
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}
