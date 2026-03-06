@@ -186,32 +186,47 @@ resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
   registration_enabled  = false
 }
 
-resource "azurerm_cosmosdb_account" "cosmos" {
-  name                          = "cosmos-ja-mma-${var.environment}"
-  location                      = var.location
-  resource_group_name           = azurerm_resource_group.env.name
-  offer_type                    = "Standard"
-  kind                          = "MongoDB"
-  public_network_access_enabled = false
+module "documentdb_mongo_cluster" {
+  source  = "Azure/avm-res-documentdb-mongocluster/azurerm"
+  version = "~> 0.2"  # Check registry for latest version
 
-  consistency_policy {
-    consistency_level = "Session"
+  # Required
+  name                = "ja-mma-mongo-cluster"          # Unique cluster name
+  resource_group_name = "rg-ja-mma-dev"                # Match your PROD RG or appropriate env
+  location            = "centralus"                     # Or your preferred region
+
+  # Cluster configuration (vCore-based)
+  administrator = {
+    username = "etrivette"
+    password = "P@ssword1@#"  # Use a secret manager / variable / Key Vault reference
   }
 
-  geo_location {
-    location          = var.location
-    failover_priority = 0
-    zone_redundant    = var.zone_redundancy_enabled
+
+  # Node configuration (scale vertically by choosing higher tier, horizontally by shards)
+  node {
+    tier       = "Free tier"          # Examples: M10, M20, M30, M40, M50, M60, M80, M200 (maps to vCores + RAM)
+    disk_size  = 32            # GiB per node (independent of compute)
+    shard_count = 1             # Start with 1; scale out to 2–32+ for horizontal
   }
 
-  backup {
-    type                = "Periodic"
-    interval_in_minutes = 240
-    retention_in_hours  = var.backup_retention_hours
-    storage_redundancy  = "Geo"
+  # Optional: High availability & geo-distribution
+  high_availability_mode = "SameZone"  # Or "SameZone" for cost-optimized
+  # geo_redundant_backup   = false           # Enable if needed
+
+  # Networking – integrate with your hub-spoke + private endpoint
+  delegated_subnet_resource_id = "/subscriptions/<sub-id>/resourceGroups/rg-ja-mma-prod/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-prod/subnets/snet-db"  # Your DB subnet (e.g., 10.30.3.0/24 in PROD)
+  private_dns_zone_resource_id = "/subscriptions/<sub-id>/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongocluster.cosmos.azure.com"  # Or appropriate zone
+
+  # Tags to match your design
+  tags = {
+    environment = "prod"
+    cost-center = "ja-mma-portal"
+    owner       = "ja-portal-team"
+    backup-enabled = "true"
+    backup-policy  = "daily"
   }
 
-  tags = var.tags
+  # Other options: backups, monitoring, customer-managed keys, etc.
 }
 
 resource "azurerm_container_app_environment" "cae" {
