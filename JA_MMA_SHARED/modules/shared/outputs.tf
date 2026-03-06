@@ -64,12 +64,13 @@ output "acr_id" {
 }
 
 output "documentdb_private_dns_zone_id" {
-  value = azurerm_private_dns_zone.documentdb_vcore.id
+  description = "ID of the private DNS zone for DocumentDB vCore (mongocluster)"
+  value       = azurerm_private_dns_zone.documentdb_vcore_zone.id  # ← Use the final label (documentdb_vcore_zone or whatever you kept)
 }
 
 output "documentdb_private_dns_zone_name" {
-  value = azurerm_private_dns_zone.documentdb_vcore.name
+  description = "Name of the private DNS zone for DocumentDB vCore (mongocluster)"
+  value       = azurerm_private_dns_zone.documentdb_vcore_zone.name
 }
-
 
 
