@@ -1,0 +1,27 @@
+template:
+  containers:
+    - name: backend-dev
+      image: jamacrs20260224.azurecr.io/ja-mma-backend:dev
+      probes:
+        - type: Startup
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 60     # Max allowed – gives ~60s before first probe
+          periodSeconds: 10
+          failureThreshold: 30        # ~5 minutes total grace time
+          timeoutSeconds: 5
+          successThreshold: 1
+        - type: Liveness
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          failureThreshold: 6
+          timeoutSeconds: 5
+        - type: Readiness
+          tcpSocket:
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 5
+          failureThreshold: 3
+          timeoutSeconds: 5
