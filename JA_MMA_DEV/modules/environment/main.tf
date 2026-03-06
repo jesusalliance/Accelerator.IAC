@@ -1,5 +1,22 @@
 # modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + ingress traffic_weight + CORRECT FQDN reference)
 
+
+
+data "azurerm_subnet" "db_subnet" {
+  name                 = azurerm_subnet.db.name
+  virtual_network_name = azurerm_virtual_network.spoke.name
+  resource_group_name  = azurerm_resource_group.env.name
+}
+
+resource "random_password" "mongo_admin" {
+  length           = 16
+  special          = true
+  min_lower        = 1
+  min_upper        = 1
+  min_numeric      = 1
+  min_special      = 1
+}
+
 resource "azurerm_resource_group" "env" {
   name     = var.rg_name
   location = var.location
@@ -51,11 +68,17 @@ resource "azurerm_subnet" "private_app" {
   }
 }
 
+
 resource "azurerm_subnet" "db" {
-  name                 = "snet-db-${var.environment}"
-  resource_group_name  = azurerm_resource_group.env.name
-  virtual_network_name = azurerm_virtual_network.spoke.name
-  address_prefixes     = [local.db_cidr]
+  name                 = "snet-db"  # or your exact name
+  resource_group_name  = azurerm_resource_group.env.name  # or "rg-ja-mma-dev"
+  virtual_network_name = azurerm_virtual_network.spoke.name  # vnet-ja-mma-dev
+  address_prefixes     = ["10.10.2.0/24"]
+
+  private_endpoint_network_policies = "Disabled"  # ← Use this
+
+  # Optional: If you need to allow NSGs/UDRs still (per design, UDR applies to DB subnet)
+  # private_endpoint_network_policies = "NetworkSecurityGroupEnabled"  # or "RouteTableEnabled" if needed
 }
 
 resource "azurerm_subnet" "management" {
@@ -178,67 +201,50 @@ resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   registration_enabled  = false
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
-  name                  = "link-${var.environment}-cosmos-mongo"
-  resource_group_name   = var.shared_rg_name
-  private_dns_zone_name = "privatelink.mongo.cosmos.azure.com"
-  virtual_network_id    = azurerm_virtual_network.spoke.id
-  registration_enabled  = false
-}
+
 
 
 module "documentdb_mongo_cluster" {
   source  = "Azure/avm-res-documentdb-mongocluster/azurerm"
-  version = "0.1.0"  # Pin to latest stable if you upgrade (check registry for 0.x updates)
+  version = "0.1.0"
 
-  # Required inputs
-  name                = "ja-mma-mongo-cluster"
-  resource_group_name = "rg-ja-mma-dev"
-  location            = "centralus"
+  name                = "ja-mma-mongo-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
 
-  administrator_login         = "etrivette"  # Must start with letter; alphanumeric + - _
-  administrator_login_password = "P@ssword1@#&$!~"  # <-- Use a variable! (sensitive = true)
+  administrator_login          = "jaadmin"
+  administrator_login_password = random_password.mongo_admin.result  # Use random_password (add below)
 
-  # Cluster / compute config (vCore-based)
-  compute_tier    = "M10"          # Recommended for dev/prod; alternatives: M10/M20 (burstable, cheaper but limited), M40+, M50, etc.
-  shard_count     = 1              # 1 for dev; scale to 2+ later for horizontal sharding
-  storage_size_gb = 32             # 32–128 GiB common for dev; supports bursting up to 512 GiB free
+  compute_tier = "M10"  # Low for DEV; upgrade for UAT/PROD
+  storage_size_gb = 32
+  shard_count = 1
+  ha_mode = "Disabled"  # No HA in DEV
 
-  # High availability (cost-optimized for dev: "Disabled" or "SameZone")
-  ha_mode = "Disabled"             # "Disabled" to minimize cost; "SameZone" for basic HA without zone redundancy
+  public_network_access = "Disabled"
 
-  # Private endpoint + VNet integration (preferred over public access)
-public_network_access = "Disabled"  # ← Ensure this is set (default is Disabled, but be explicit)  
+  private_endpoints = {
+    primary = {
+      name                = "pe-ja-mma-mongo-${var.environment}"
+      subnet_resource_id  = data.azurerm_subnet.db_subnet.id
 
-private_endpoints = {
-    dev-primary = {   # Key name can be anything; "primary" or "dev-primary" works
-      name                = "pe-ja-mma-mongo-dev"  # Matches your error's attempted name
-      subnet_resource_id  = "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-mma-dev/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-dev/subnets/snet-db-dev"  # Your DEV DB subnet (10.10.2.0/24)
-
-      private_dns_zone_group_name = "default"  # Or "ja-mma-dns-group"
-
-      private_dns_zone_resource_ids = [
-        "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongocluster.cosmos.azure.com"
-      ]  # ← Critical: Use the DocumentDB vCore-specific zone (not .mongo.)
-
-      # Optional: If you want stricter NSG or tags
-      # tags = { environment = "dev", cost-center = "ja-mma-portal" }
+      private_dns_zone_group_name = "default"
+      private_dns_zone_resource_ids = [var.shared_documentdb_dns_zone_id]
     }
   }
 
-  # Optional: Let the module manage DNS zone group association (default true; set false if managing externally via policy/Azure DNS)
-  # private_endpoints_manage_dns_zone_group = true
+  tags = var.tags
 
-  # Tags (updated to match your dev env; adjust as needed)
-  tags = {
-    environment   = "dev"           
-    cost-center   = "ja-mma-portal"
-    owner         = "ja-portal-team"
-    backup-enabled = "true"
-    backup-policy  = "daily"
-  }
+  depends_on = [azurerm_subnet.db]  # Ensure subnet ready
+}
 
-  enable_telemetry = false
+# DNS link for new vCore zone (centralized in shared, linked to spoke VNet)
+resource "azurerm_private_dns_zone_virtual_network_link" "documentdb_vcore_link" {
+  name                  = "link-${var.environment}-documentdb-vcore"
+  resource_group_name   = var.shared_rg_name
+  private_dns_zone_name = var.shared_documentdb_dns_zone_name
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+  tags                  = var.tags
 }
 
 resource "azurerm_container_app_environment" "cae" {

@@ -63,6 +63,12 @@ output "acr_id" {
   value       = azurerm_container_registry.acr.id
 }
 
+output "documentdb_private_dns_zone_id" {
+  value = azurerm_private_dns_zone.documentdb_vcore.id
+}
 
+output "documentdb_private_dns_zone_name" {
+  value = azurerm_private_dns_zone.documentdb_vcore.name
+}
 
 

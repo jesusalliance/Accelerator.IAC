@@ -105,7 +105,9 @@ resource "azurerm_firewall_policy_rule_collection_group" "egress" {
 
 
       destination_fqdns = [
-	"*.docker.com", 
+	
+	"*.alpinelinux.org",
+        "*.docker.com", 
 	"*.ubuntu.com",       
 	"*.google.com",
 	"*.azure.com",
@@ -132,7 +134,7 @@ resource "azurerm_container_registry" "acr" {
   tags                          = var.tags
 
   network_rule_set {
-    default_action = "Deny"
+    default_action = "Allow"
     ip_rule {
       action   = "Allow"
       ip_range = "104.176.84.255/32"  # Your IP; add to variables.tf if dynamic
@@ -319,4 +321,21 @@ resource "azurerm_role_assignment" "container_apps_acr_pull" {
   scope                = azurerm_container_registry.acr.id
   role_definition_name = "AcrPull"
   principal_id         = azurerm_user_assigned_identity.github_ci.principal_id
+}
+
+# New Private DNS Zone for DocumentDB vCore (MongoDB cluster)
+resource "azurerm_private_dns_zone" "documentdb_vcore" {
+  name                = "privatelink.mongocluster.cosmos.azure.com"
+  resource_group_name = azurerm_resource_group.shared.name
+  tags                = var.tags
+}
+
+# Link to hub VNet (centralized resolution)
+resource "azurerm_private_dns_zone_virtual_network_link" "documentdb_vcore_hub" {
+  name                  = "link-hub-to-documentdb-vcore"
+  resource_group_name   = azurerm_resource_group.shared.name
+  private_dns_zone_name = azurerm_private_dns_zone.documentdb_vcore.name
+  virtual_network_id    = azurerm_virtual_network.hub.id
+  registration_enabled  = false
+  tags                  = var.tags
 }
