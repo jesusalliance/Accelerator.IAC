@@ -70,11 +70,6 @@ output "shared_hub_vnet_id" {
   description = "Hub VNet ID for bidirectional peering from spokes"
 }
 
-output "shared_cosmos_dns_zone_id" {
-  value       = module.shared.cosmos_private_dns_zone_id
-  description = "Shared Cosmos DB private DNS zone ID for spoke VNet links"
-}
-
 output "shared_acr_dns_zone_id" {
   value       = module.shared.acr_private_dns_zone_id
   description = "Shared ACR private DNS zone ID for spoke VNet links"

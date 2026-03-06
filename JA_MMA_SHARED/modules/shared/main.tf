@@ -181,13 +181,6 @@ resource "azurerm_key_vault" "kv" {
   tags                        = var.tags
 }
 
-# Private DNS Zones
-resource "azurerm_private_dns_zone" "cosmos_mongo" {
-  name                = "privatelink.mongo.cosmos.azure.com"
-  resource_group_name = azurerm_resource_group.shared.name
-  tags                = var.tags
-}
-
 resource "azurerm_private_dns_zone" "acr" {
   name                = "privatelink.azurecr.io"
   resource_group_name = azurerm_resource_group.shared.name

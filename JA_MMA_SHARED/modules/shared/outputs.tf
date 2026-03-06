@@ -28,10 +28,6 @@ output "github_ci_identity_principal_id" {
   value = azurerm_user_assigned_identity.github_ci.principal_id
 }
 
-output "cosmos_private_dns_zone_id" {
-  value = azurerm_private_dns_zone.cosmos_mongo.id
-}
-
 output "acr_private_dns_zone_id" {
   value = azurerm_private_dns_zone.acr.id
 }
