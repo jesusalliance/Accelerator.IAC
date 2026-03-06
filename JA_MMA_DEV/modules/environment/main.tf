@@ -188,7 +188,9 @@ resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
 
 module "documentdb_mongo_cluster" {
   source  = "Azure/avm-res-documentdb-mongocluster/azurerm"
-  version = "~> 0.2"  # Check registry for latest version
+  version = "0.1.0"    # Check registry for latest version
+
+}
 
   # Required
   name                = "ja-mma-mongo-cluster"          # Unique cluster name
@@ -215,7 +217,7 @@ module "documentdb_mongo_cluster" {
 
   # Networking – integrate with your hub-spoke + private endpoint
   delegated_subnet_resource_id = "/subscriptions/<sub-id>/resourceGroups/rg-ja-mma-prod/providers/Microsoft.Network/virtualNetworks/vnet-ja-mma-prod/subnets/snet-db"  # Your DB subnet (e.g., 10.30.3.0/24 in PROD)
-  private_dns_zone_resource_id = "/subscriptions/<sub-id>/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongocluster.cosmos.azure.com"  # Or appropriate zone
+  private_dns_zone_resource_id = "/subscriptions/<sub-id>/resourceGroups/rg-ja-shared/providers/Microsoft.Network/privateDnsZones/privatelink.mongo.cosmos.azure.com"  # Or appropriate zone
 
   # Tags to match your design
   tags = {
