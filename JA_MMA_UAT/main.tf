@@ -1,4 +1,4 @@
-# main.tf (UAT-root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
+# main.tf (uat-root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
 
 terraform {
   required_providers {
@@ -13,7 +13,7 @@ variable "tags" {
   description = "Common tags for all resources"
   type        = map(string)
   default     = {
-    environment = "dev"
+    environment = "uat"
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
@@ -38,7 +38,7 @@ data "azurerm_private_dns_zone" "documentdb_vcore" {
 }
 
 
-module "dev" {
+module "uat" {
   source = "./modules/environment"
 
   environment             = "uat"
@@ -74,18 +74,18 @@ module "dev" {
   shared_rg_name            = data.terraform_remote_state.shared.outputs.shared_rg_name
 
   tags = {
-    environment = "dev"
+    environment = "uat"
     project     = "ja-mma-portal"
     owner       = "ja-portal-team"
   }
 }
 
 
-# Spoke-to-hub peering for DEV
-resource "azurerm_virtual_network_peering" "dev_to_hub" {
-  name                         = "peering-dev-to-hub-link"
-  resource_group_name          = module.dev.rg_name
-  virtual_network_name         = "vnet-ja-mma-dev"
+# Spoke-to-hub peering for uat
+resource "azurerm_virtual_network_peering" "uat_to_hub" {
+  name                         = "peering-uat-to-hub-link"
+  resource_group_name          = module.uat.rg_name
+  virtual_network_name         = "vnet-ja-mma-uat"
   remote_virtual_network_id    = data.terraform_remote_state.shared.outputs.shared_hub_vnet_id
   allow_virtual_network_access = true
   allow_forwarded_traffic      = true
@@ -93,34 +93,34 @@ resource "azurerm_virtual_network_peering" "dev_to_hub" {
   use_remote_gateways          = false
 }
 
-# DEV - ACR registry DNS zone link
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_registry_dev" {
-  name                  = "link-dev-to-acr-registry"
-  resource_group_name   = module.dev.rg_name          # Fixed from earlier error
+# uat - ACR registry DNS zone link
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_registry_uat" {
+  name                  = "link-uat-to-acr-registry"
+  resource_group_name   = module.uat.rg_name          # Fixed from earlier error
   private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_registry_dns_zone_name
-  virtual_network_id    = module.dev.vnet_id          # Fixed from earlier error
+  virtual_network_id    = module.uat.vnet_id          # Fixed from earlier error
   registration_enabled  = false
   tags                  = var.tags                    # Now valid after declaring variable
 }
 
-# DEV - ACR data DNS zone link
-resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_dev" {
-  name                  = "link-dev-to-acr-data"
-  resource_group_name   = module.dev.rg_name
+# uat - ACR data DNS zone link
+resource "azurerm_private_dns_zone_virtual_network_link" "acr_data_uat" {
+  name                  = "link-uat-to-acr-data"
+  resource_group_name   = module.uat.rg_name
   private_dns_zone_name = data.terraform_remote_state.shared.outputs.acr_data_dns_zone_name
-  virtual_network_id    = module.dev.vnet_id
+  virtual_network_id    = module.uat.vnet_id
   registration_enabled  = false
   tags                  = var.tags                    # Now valid
 }
 
 
-# Root outputs - DEV folder only
-output "dev_rg_name" {
-  value       = module.dev.rg_name
-  description = "DEV resource group name"
+# Root outputs - uat folder only
+output "uat_rg_name" {
+  value       = module.uat.rg_name
+  description = "uat resource group name"
 }
 
-output "dev_vnet_id" {
-  value       = module.dev.vnet_id
-  description = "DEV spoke VNet ID (for debugging or future use)"
+output "uat_vnet_id" {
+  value       = module.uat.vnet_id
+  description = "uat spoke VNet ID (for debugging or future use)"
 }

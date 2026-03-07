@@ -70,9 +70,9 @@ resource "azurerm_subnet" "private_app" {
 
 
 resource "azurerm_subnet" "db" {
-  name                 = "snet-db"  # Confirm this matches your design: 10.10.2.0/24 for DEV
-  resource_group_name  = azurerm_resource_group.env.name  # rg-ja-mma-dev
-  virtual_network_name = azurerm_virtual_network.spoke.name  # vnet-ja-mma-dev
+  name                 = "snet-db"  # Confirm this matches your design: 10.10.2.0/24 for uat
+  resource_group_name  = azurerm_resource_group.env.name  # rg-ja-mma-uat
+  virtual_network_name = azurerm_virtual_network.spoke.name  # vnet-ja-mma-uat
   address_prefixes     = ["10.10.2.0/24"]
 
   private_endpoint_network_policies = "Disabled"  # ← This line fixes the error and enables private endpoint
@@ -214,10 +214,10 @@ module "documentdb_mongo_cluster" {
   administrator_login          = "jaadmin"
   administrator_login_password = random_password.mongo_admin.result  # Use random_password (add below)
 
-  compute_tier = "M10"  # Low for DEV; upgrade for UAT/PROD
+  compute_tier = "M10"  # Low for uat; upgrade for UAT/PROD
   storage_size_gb = 32
   shard_count = 1
-  ha_mode = "Disabled"  # No HA in DEV
+  ha_mode = "Disabled"  # No HA in uat
 
   public_network_access = "Disabled"
 
