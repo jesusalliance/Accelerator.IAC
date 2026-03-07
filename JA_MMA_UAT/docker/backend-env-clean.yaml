@@ -1,0 +1,57 @@
+﻿template:
+  containers:
+    - name: backend-dev
+      image: jamacrs20260224.azurecr.io/ja-mma-backend:dev
+      env:
+        - name: SQUARE_MONTHLY_PLAN_VARIATION_ID
+          value: HVBPQ57XTMHAVGG4AS3RXFX
+        - name: XAI_API_KEY
+          secretRef: xai-api-key
+        - name: MONGO_URI
+          secretRef: mongo-uri
+        - name: SECRET_KEY
+          secretRef: secret-key
+        - name: SENDGRID_API_KEY
+          secretRef: sendgrid-api-key
+        - name: TWILIO_ACCOUNT_SID
+          secretRef: twilio-account-sid
+        - name: TWILIO_AUTH_TOKEN
+          secretRef: twilio-auth-token
+        - name: TWILIO_PHONE_NUMBER
+          secretRef: twilio-phone-number
+        - name: SENTRY_DSN
+          secretRef: sentry-dsn
+        - name: SQUARE_APPLICATION_ID
+          secretRef: square-application-id
+        - name: SQUARE_ACCESS_TOKEN
+          secretRef: square-access-token
+        - name: SQUARE_LOCATION_ID
+          secretRef: square-location-id
+        - name: APP_RESET_PASSWORD_URL
+          secretRef: app-reset-password-url
+        - name: APP_REGISTER_URL
+          secretRef: app-register-url
+        - name: GOOGLE_CLIENT_ID
+          secretRef: google-client-id
+        - name: GOOGLE_CLIENT_SECRET
+          secretRef: google-client-secret
+        - name: APPLE_CLIENT_ID
+          secretRef: apple-client-id
+        - name: APPLE_TEAM_ID
+          secretRef: apple-team-id
+        - name: APPLE_KEY_ID
+          secretRef: apple-key-id
+        - name: APPLE_PRIVATE_KEY
+          secretRef: apple-private-key
+        - name: RECAPTCHA_SECRET_KEY
+          secretRef: recaptcha-secret-key
+        - name: FRONTEND_URL
+          secretRef: frontend-url
+        - name: VAPID_PUBLIC_KEY
+          secretRef: vapid-public-key
+        - name: VAPID_PRIVATE_KEY
+          secretRef: vapid-private-key
+        - name: VAPID_SUBJECT
+          secretRef: vapid-subject
+        - name: COOKIE_DOMAIN
+          secretRef: cookie-domain

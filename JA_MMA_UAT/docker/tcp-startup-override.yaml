@@ -1,0 +1,26 @@
+template:
+  containers:
+    - name: frontend-dev
+      image: jamacrs20260224.azurecr.io/ja-mma-frontend:dev  # Must include for patch
+      probes:
+        - type: Startup
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 45   # Key: High delay to let NGINX fully start
+          periodSeconds: 10
+          failureThreshold: 60      # ~10 min total grace
+          timeoutSeconds: 5
+          successThreshold: 1
+        # Optional: Add simple TCP liveness/readiness (or keep HTTP if you want response check)
+        - type: Liveness
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          failureThreshold: 6
+        - type: Readiness
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          failureThreshold: 3

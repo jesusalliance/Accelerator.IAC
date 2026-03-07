@@ -129,13 +129,3 @@ variable "tags" {
   description = "Common resource tags"
   type        = map(string)
 }
-
-variable "shared_documentdb_dns_zone_id" {
-  description = "Shared DocumentDB vCore private DNS zone ID"
-  type        = string
-}
-
-variable "shared_documentdb_dns_zone_name" {
-  description = "Shared DocumentDB vCore private DNS zone name"
-  type        = string
-}

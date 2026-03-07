@@ -1,20 +1,9 @@
 # modules/environment/main.tf - FINAL VERSION (exact PDF subnet CIDRs + DNS links + GitHub CI role + ingress traffic_weight + CORRECT FQDN reference)
 
-
-
-data "azurerm_subnet" "db_subnet" {
-  name                 = azurerm_subnet.db.name
-  virtual_network_name = azurerm_virtual_network.spoke.name
-  resource_group_name  = azurerm_resource_group.env.name
-}
-
-resource "random_password" "mongo_admin" {
-  length           = 16
-  special          = true
-  min_lower        = 1
-  min_upper        = 1
-  min_numeric      = 1
-  min_special      = 1
+# Reference the shared GitHub CI identity (has AcrPull for image pulls)
+data "azurerm_user_assigned_identity" "acr_pull" {
+  name                = "id-ja-github-ci"
+  resource_group_name = "rg-ja-shared"
 }
 
 resource "azurerm_resource_group" "env" {
@@ -68,16 +57,11 @@ resource "azurerm_subnet" "private_app" {
   }
 }
 
-
 resource "azurerm_subnet" "db" {
-  name                 = "snet-db"  # Confirm this matches your design: 10.10.2.0/24 for DEV
-  resource_group_name  = azurerm_resource_group.env.name  # rg-ja-mma-dev
-  virtual_network_name = azurerm_virtual_network.spoke.name  # vnet-ja-mma-dev
-  address_prefixes     = ["10.10.2.0/24"]
-
-  private_endpoint_network_policies = "Disabled"  # ← This line fixes the error and enables private endpoint
-
-  # Other existing args (delegation if any, service_endpoints, etc.) remain unchanged
+  name                 = "snet-db-${var.environment}"
+  resource_group_name  = azurerm_resource_group.env.name
+  virtual_network_name = azurerm_virtual_network.spoke.name
+  address_prefixes     = [local.db_cidr]
 }
 
 resource "azurerm_subnet" "management" {
@@ -200,50 +184,40 @@ resource "azurerm_private_dns_zone_virtual_network_link" "acr_link" {
   registration_enabled  = false
 }
 
+resource "azurerm_private_dns_zone_virtual_network_link" "cosmos_link" {
+  name                  = "link-${var.environment}-cosmos-mongo"
+  resource_group_name   = var.shared_rg_name
+  private_dns_zone_name = "privatelink.mongo.cosmos.azure.com"
+  virtual_network_id    = azurerm_virtual_network.spoke.id
+  registration_enabled  = false
+}
 
+resource "azurerm_cosmosdb_account" "cosmos" {
+  name                          = "cosmos-ja-mma-${var.environment}"
+  location                      = var.location
+  resource_group_name           = azurerm_resource_group.env.name
+  offer_type                    = "Standard"
+  kind                          = "MongoDB"
+  public_network_access_enabled = false
 
+  consistency_policy {
+    consistency_level = "Session"
+  }
 
-module "documentdb_mongo_cluster" {
-  source  = "Azure/avm-res-documentdb-mongocluster/azurerm"
-  version = "0.1.0"
+  geo_location {
+    location          = var.location
+    failover_priority = 0
+    zone_redundant    = var.zone_redundancy_enabled
+  }
 
-  name                = "ja-mma-mongo-${var.environment}"
-  resource_group_name = azurerm_resource_group.env.name
-  location            = var.location
-
-  administrator_login          = "jaadmin"
-  administrator_login_password = random_password.mongo_admin.result  # Use random_password (add below)
-
-  compute_tier = "M10"  # Low for DEV; upgrade for UAT/PROD
-  storage_size_gb = 32
-  shard_count = 1
-  ha_mode = "Disabled"  # No HA in DEV
-
-  public_network_access = "Disabled"
-
-  private_endpoints = {
-    primary = {
-      name                = "pe-ja-mma-mongo-${var.environment}"
-      subnet_resource_id  = data.azurerm_subnet.db_subnet.id
-
-      private_dns_zone_group_name = "default"
-      private_dns_zone_resource_ids = [var.shared_documentdb_dns_zone_id]
-    }
+  backup {
+    type                = "Periodic"
+    interval_in_minutes = 240
+    retention_in_hours  = var.backup_retention_hours
+    storage_redundancy  = "Geo"
   }
 
   tags = var.tags
-
-  depends_on = [azurerm_subnet.db]  # Ensure subnet ready
-}
-
-# DNS link for new vCore zone (centralized in shared, linked to spoke VNet)
-resource "azurerm_private_dns_zone_virtual_network_link" "documentdb_vcore_link" {
-  name                  = "link-${var.environment}-documentdb-vcore"
-  resource_group_name   = var.shared_rg_name
-  private_dns_zone_name = var.shared_documentdb_dns_zone_name
-  virtual_network_id    = azurerm_virtual_network.spoke.id
-  registration_enabled  = false
-  tags                  = var.tags
 }
 
 resource "azurerm_container_app_environment" "cae" {
@@ -254,20 +228,157 @@ resource "azurerm_container_app_environment" "cae" {
   internal_load_balancer_enabled = (var.ingress_type == "front_door")
   log_analytics_workspace_id     = var.log_analytics_id
   tags                           = var.tags
+}
 
-  # Required to stop replacement loop + satisfy provider validation
-  infrastructure_resource_group_name = "ME_cae-ja-mma-${var.environment}_rg-ja-mma-${var.environment}_${var.location}"
+resource "azurerm_container_app" "frontend" {
+  name                         = "frontend-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.cae.id
+  resource_group_name          = azurerm_resource_group.env.name
+  revision_mode                = "Single"
 
-  # Add this block (this is the missing piece)
-  workload_profile {
-    name = "Consumption"   # Default profile for most Container Apps envs
-    workload_profile_type = "Consumption"
-    minimum_count         = 0
-    maximum_count         = 0   # 0 = unlimited (Azure auto-scales)
+  template {
+    min_replicas = var.replica_min
+    max_replicas = var.replica_max
+
+    container {
+      name   = "frontend"
+      image  = "${var.acr_login_server}/ja-mma-frontend:latest"
+      cpu    = "0.5"
+      memory = "1Gi"
+    }
+  }
+
+  # ingress block with REQUIRED traffic_weight (azurerm ~4.x validation)
+  ingress {
+    external_enabled = true
+    target_port      = 8080
+    transport        = "http"  # or "auto" if preferred
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
+  }
+
+  tags = var.tags
+
+  identity {
+  type         = "UserAssigned"
+  identity_ids = [data.azurerm_user_assigned_identity.acr_pull.id]
+  }
+
+  registry {
+  server   = "jamacrs20260224.azurecr.io"
+  identity = data.azurerm_user_assigned_identity.acr_pull.id
   }
 }
 
+resource "azurerm_container_app" "backend" {
+  name                         = "backend-${var.environment}"
+  container_app_environment_id = azurerm_container_app_environment.cae.id
+  resource_group_name          = azurerm_resource_group.env.name
+  revision_mode                = "Single"
 
+  template {
+    min_replicas = var.replica_min
+    max_replicas = var.replica_max
+
+    container {
+      name   = "backend"
+      image  = "${var.acr_login_server}/ja-mma-backend:latest"
+      cpu    = "0.75"
+      memory = "1.5Gi"
+    }
+  }
+
+  # Backend is internal-only → NO ingress block
+
+  tags = var.tags
+
+    identity {
+  type         = "UserAssigned"
+  identity_ids = [data.azurerm_user_assigned_identity.acr_pull.id]
+  }
+
+  registry {
+  server   = "jamacrs20260224.azurecr.io"
+  identity = data.azurerm_user_assigned_identity.acr_pull.id
+  }
+}
+
+resource "azurerm_application_gateway" "appgw" {
+  count = var.ingress_type == "app_gateway" ? 1 : 0
+
+  name                = "appgw-ja-mma-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+
+  sku {
+    name     = var.appgw_sku
+    tier     = "Standard_v2"
+  }
+
+  autoscale_configuration {
+    min_capacity = var.appgw_capacity
+    max_capacity = var.appgw_max_capacity
+  }
+
+  gateway_ip_configuration {
+    name      = "gw-ip-config"
+    subnet_id = azurerm_subnet.public[0].id
+  }
+
+  frontend_port {
+    name = "https-port"
+    port = 443
+  }
+
+  frontend_ip_configuration {
+    name                 = "frontend-ip"
+    public_ip_address_id = azurerm_public_ip.appgw_pip[0].id
+  }
+
+  backend_address_pool {
+    name  = "backend-pool"
+    fqdns = [azurerm_container_app.frontend.latest_revision_fqdn]  # FIXED: use exported latest_revision_fqdn
+  }
+
+  backend_http_settings {
+    name                  = "http-settings"
+    cookie_based_affinity = "Disabled"
+    port                  = 8080
+    protocol              = "Http"
+    request_timeout       = 60
+  }
+
+  http_listener {
+    name                           = "https-listener"
+    frontend_ip_configuration_name = "frontend-ip"
+    frontend_port_name             = "https-port"
+    protocol                       = "Https"
+  }
+
+  request_routing_rule {
+    name                       = "routing-rule"
+    rule_type                  = "Basic"
+    priority                   = 100
+    http_listener_name         = "https-listener"
+    backend_address_pool_name  = "backend-pool"
+    backend_http_settings_name = "http-settings"
+  }
+
+  tags = var.tags
+}
+
+resource "azurerm_public_ip" "appgw_pip" {
+  count               = var.ingress_type == "app_gateway" ? 1 : 0
+  name                = "pip-appgw-${var.environment}"
+  resource_group_name = azurerm_resource_group.env.name
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = var.tags
+}
 
 # GitHub CI/CD role for deploying to this environment (design 13.0)
 resource "azurerm_role_assignment" "github_container_apps" {
