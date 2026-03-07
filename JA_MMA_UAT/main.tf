@@ -1,4 +1,4 @@
-# main.tf (DEV-root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
+# main.tf (UAT-root) - Jesus Alliance MMA Portal - FULL hub-spoke + exact PDF compliance (variable name fix)
 
 terraform {
   required_providers {
@@ -41,10 +41,10 @@ data "azurerm_private_dns_zone" "documentdb_vcore" {
 module "dev" {
   source = "./modules/environment"
 
-  environment             = "dev"
-  rg_name                 = "rg-ja-mma-dev"
+  environment             = "uat"
+  rg_name                 = "rg-ja-mma-uat"
   location                = "centralus"
-  vnet_cidr               = "10.10.0.0/21"
+  vnet_cidr               = "10.20.0.0/21"
   az_count                = 1
   replica_min             = 1
   replica_max             = 3
@@ -67,9 +67,7 @@ module "dev" {
   key_vault_id              = data.terraform_remote_state.shared.outputs.shared_key_vault_id
   acr_id                    = data.terraform_remote_state.shared.outputs.shared_acr_id
   frontdoor_id              = data.terraform_remote_state.shared.outputs.shared_frontdoor_id
-  #shared_documentdb_dns_zone_id    = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_id
-  #shared_documentdb_dns_zone_name  = data.terraform_remote_state.shared.outputs.shared_documentdb_private_dns_zone_name
-  
+    
 
   shared_documentdb_dns_zone_id   = data.azurerm_private_dns_zone.documentdb_vcore.id
   shared_documentdb_dns_zone_name = data.azurerm_private_dns_zone.documentdb_vcore.name
