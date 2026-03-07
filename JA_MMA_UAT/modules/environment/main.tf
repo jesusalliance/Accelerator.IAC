@@ -73,7 +73,7 @@ resource "azurerm_subnet" "db" {
   name                 = "snet-db"  # Confirm this matches your design: 10.10.2.0/24 for uat
   resource_group_name  = azurerm_resource_group.env.name  # rg-ja-mma-uat
   virtual_network_name = azurerm_virtual_network.spoke.name  # vnet-ja-mma-uat
-  address_prefixes     = ["10.10.2.0/24"]
+  address_prefixes     = db_cidr
 
   private_endpoint_network_policies = "Disabled"  # ← This line fixes the error and enables private endpoint
 
