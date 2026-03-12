@@ -1,0 +1,26 @@
+[
+  {
+    "type": "Liveness",
+    "failureThreshold": 6,
+    "initialDelaySeconds": 60,
+    "periodSeconds": 10,
+    "timeoutSeconds": 5,
+    "tcpSocket": { "port": 8000 }
+  },
+  {
+    "type": "Readiness",
+    "failureThreshold": 3,
+    "initialDelaySeconds": 60,
+    "periodSeconds": 5,
+    "timeoutSeconds": 5,
+    "tcpSocket": { "port": 8000 }
+  },
+  {
+    "type": "Startup",
+    "failureThreshold": 30,
+    "initialDelaySeconds": 60,
+    "periodSeconds": 10,
+    "timeoutSeconds": 5,
+    "tcpSocket": { "port": 8000 }
+  }
+]

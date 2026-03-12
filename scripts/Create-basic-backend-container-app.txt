@@ -1,0 +1,51 @@
+# Script 1 – Azure CLI: Create basic Container App (public image) + assign identities after creation
+
+$rgUat            = "rg-ja-mma-uat"
+$caeUatName       = "cae-ja-mma-uat"
+$containerAppName = "backend-mma-uat"
+$placeholderImage = "mcr.microsoft.com/k8se/quickstart:latest"   # public, no auth needed
+$userAssignedId   = "/subscriptions/5a762990-f710-44f8-8027-1bb20fb3cf60/resourcegroups/rg-ja-shared/providers/Microsoft.ManagedIdentity/userAssignedIdentities/id-ja-github-ci"
+
+Write-Output "Creating basic Container App '$containerAppName' with public image (no identity yet)..."
+
+az containerapp create `
+  --name $containerAppName `
+  --resource-group $rgUat `
+  --environment $caeUatName `
+  --image $placeholderImage `
+  --cpu 0.5 `
+  --memory 1Gi `
+  --min-replicas 1 `
+  --max-replicas 5 `
+  --ingress internal `
+  --target-port 8000 `
+  --transport auto `
+  --allow-insecure `
+  --scale-rule-name http-scaler `
+  --scale-rule-type http `
+  --scale-rule-http-concurrency 10 `
+  --output none
+
+# Wait a short time for the app to exist
+Start-Sleep -Seconds 30
+
+Write-Output "Assigning user-assigned identity to '$containerAppName'..."
+az containerapp identity assign `
+  --name $containerAppName `
+  --resource-group $rgUat `
+  --identities $userAssignedId `
+  --output none
+
+Write-Output "Enabling system-assigned identity on '$containerAppName'..."
+az containerapp identity assign `
+  --name $containerAppName `
+  --resource-group $rgUat `
+  --system-assigned `
+  --output none
+
+Write-Output ""
+Write-Output "Script 1 finished."
+Write-Output "Wait 60–120 seconds for provisioning, then check status:"
+Write-Output "az containerapp show --name $containerAppName --resource-group $rgUat --query provisioningState --output tsv"
+Write-Output ""
+Write-Output "If 'Succeeded' → run Script 2 (adds probes + real image + secrets)"
